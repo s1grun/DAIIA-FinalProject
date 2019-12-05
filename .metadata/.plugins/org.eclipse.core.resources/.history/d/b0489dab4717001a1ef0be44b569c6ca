@@ -70,15 +70,15 @@ species Guests skills:[moving, fipa]{
 	point returnBack <- rnd({0.0, 0.0, 0.0},{100.0,100.0,0.0});
 	point original_location;
 	
-//	float betterLightShow <- rnd(0.1, 1.0);
-//	float betterVisuals <- rnd(0.2, 1.0);
-//	float goodSoundSystem <- rnd(0.3, 1.0);
-//	float famous <- rnd (0.0, 1.0);
-//	float popMusic <- rnd(0.0, 1.0);
-//	float rockMusic <- rnd(0.0, 1.0);
-//	float folksMusic <- rnd(0.0, 1.0);
-//	float jazzMusic <- rnd(0.0, 1.0);
-//	Stage fav_stage;
+	float betterLightShow <- rnd(0.1, 1.0);
+	float betterVisuals <- rnd(0.2, 1.0);
+	float goodSoundSystem <- rnd(0.3, 1.0);
+	float famous <- rnd (0.0, 1.0);
+	float popMusic <- rnd(0.0, 1.0);
+	float rockMusic <- rnd(0.0, 1.0);
+	float folksMusic <- rnd(0.0, 1.0);
+	float jazzMusic <- rnd(0.0, 1.0);
+	Stage fav_stage;
 	point guestLocation <- nil;
 	float util<-0.0;
 	list act_util_list <- [];
@@ -173,100 +173,100 @@ species Guests skills:[moving, fipa]{
 		 movingStatus <-0;
 	}
 
-//	reflex goToStage when: !(empty(informs)) {
-//		loop msg over: informs{
-////			message msg <- informs[0];
-//			if(msg.contents[0]='start'){
-//				Stage informingConcert <- Stage(agent(msg.sender));
-////				write name+ " Receive inform from: " + informingConcert;
-//				string lightstr <- msg.contents[1];
-//				float light <- float(lightstr);
-//				string visualstr <- msg.contents[2];
-//				float visual <- float(visualstr);
-//				float sound <- float(msg.contents[3]);
-//				float famous1 <- float(msg.contents[4]);
-//				float rock <- float(msg.contents[5]);
-//				float pop <- float(msg.contents[6]);
-//				float folks <- float(msg.contents[7]);
-//				float jazz <- float(msg.contents[8]);
-//				
-//				
-////				do utility(light, visual, sound, famous1, rock, pop, folks, jazz, informingConcert);
-//				
-//				status<-1;
-////				fav_stage.guestsList <+ self;
-//				my_color <- fav_stage.stage_color;
-////				write name + act_util_list;
-////				write name+ " Going to: " + fav_stage;
-//			}else{
-////				write name +"reveice :"+msg.contents[0];
-//				status<-3;
-//				Stage sender <- Stage(agent(msg.sender));
-//				my_color <- #blue;
-////				write act_util_list;
-//				remove [fav_stage,util] from:act_util_list;
-////				write act_util_list;
-//				if(length(act_util_list)>1){
-//					util <- float(last(act_util_list)[1]);
-//					fav_stage <- last(act_util_list)[0];
-//					my_color <- fav_stage.stage_color;
-//					status <-1;
-//				}
-//				
-//				
-//			}	
-//		}
+	reflex goToStage when: !(empty(informs)) {
+		loop msg over: informs{
+//			message msg <- informs[0];
+			if(msg.contents[0]='start'){
+				Stage informingConcert <- Stage(agent(msg.sender));
+//				write name+ " Receive inform from: " + informingConcert;
+				string lightstr <- msg.contents[1];
+				float light <- float(lightstr);
+				string visualstr <- msg.contents[2];
+				float visual <- float(visualstr);
+				float sound <- float(msg.contents[3]);
+				float famous1 <- float(msg.contents[4]);
+				float rock <- float(msg.contents[5]);
+				float pop <- float(msg.contents[6]);
+				float folks <- float(msg.contents[7]);
+				float jazz <- float(msg.contents[8]);
+				
+				
+				do utility(light, visual, sound, famous1, rock, pop, folks, jazz, informingConcert);
+				
+				status<-1;
+//				fav_stage.guestsList <+ self;
+				my_color <- fav_stage.stage_color;
+//				write name + act_util_list;
+//				write name+ " Going to: " + fav_stage;
+			}else{
+//				write name +"reveice :"+msg.contents[0];
+				status<-3;
+				Stage sender <- Stage(agent(msg.sender));
+				my_color <- #blue;
+//				write act_util_list;
+				remove [fav_stage,util] from:act_util_list;
+//				write act_util_list;
+				if(length(act_util_list)>1){
+					util <- float(last(act_util_list)[1]);
+					fav_stage <- last(act_util_list)[0];
+					my_color <- fav_stage.stage_color;
+					status <-1;
+				}
+				
+				
+			}	
+		}
 		
-//	}
+	}
 	
 	
-//	reflex goingToStage when: status=1 {
-//		do goto target:fav_stage;
-//	}
+	reflex goingToStage when: status=1 {
+		do goto target:fav_stage;
+	}
 	
-//	
-//	reflex atStage when: fav_stage != nil and (location distance_to fav_stage) <5 and status=1{
-//		do wander;
-//		status<-2;
-//	}
 	
-//	reflex dancing when: status=2 {
-//		do wander;
-//
-//	}
+	reflex atStage when: fav_stage != nil and (location distance_to fav_stage) <5 and status=1{
+		do wander;
+		status<-2;
+	}
+	
+	reflex dancing when: status=2 {
+		do wander;
+
+	}
 
 	
 	
-//	reflex goToMyLocation when: status=3 {
-//		do goto target:guestLocation;
-//		
-//	}
+	reflex goToMyLocation when: status=3 {
+		do goto target:guestLocation;
+		
+	}
 	
-//	reflex atMyLocation when: (location = guestLocation) {
-//		status <- 0;
-//	}
+	reflex atMyLocation when: (location = guestLocation) {
+		status <- 0;
+	}
 	
 	
 	
-//	action utility(float light, float visual, float sound, float famous1, float rock, float pop, float folks, float jazz, Stage sender) {
-//		float tmp <-  betterLightShow * light + betterVisuals * visual + goodSoundSystem * sound + famous * famous1 + rockMusic * rock + popMusic * pop + folksMusic * folks + jazzMusic * jazz;
-////		if tmp > util{
-////			util <- tmp;
-////			fav_stage <- sender;
-////		}
-//		act_util_list <+ [sender,tmp];
-//		act_util_list <- act_util_list sort_by (float(each[1]));
-//		util <- float(last(act_util_list)[1]);
-//		fav_stage <- last(act_util_list)[0];
-//		
-//	}
-	
-//	reflex meetOtherGuests when: statusFeeling = 1 and location=storeDestination and movingStatus =2 {
-//		if(gType = "") {
-//			
+	action utility(float light, float visual, float sound, float famous1, float rock, float pop, float folks, float jazz, Stage sender) {
+		float tmp <-  betterLightShow * light + betterVisuals * visual + goodSoundSystem * sound + famous * famous1 + rockMusic * rock + popMusic * pop + folksMusic * folks + jazzMusic * jazz;
+//		if tmp > util{
+//			util <- tmp;
+//			fav_stage <- sender;
 //		}
-//	}
-//	
+		act_util_list <+ [sender,tmp];
+		act_util_list <- act_util_list sort_by (float(each[1]));
+		util <- float(last(act_util_list)[1]);
+		fav_stage <- last(act_util_list)[0];
+		
+	}
+	
+	reflex meetOtherGuests when: statusFeeling = 1 and location=storeDestination and movingStatus =2 {
+		if(gType = "") {
+			
+		}
+	}
+	
 }
 
 species Bar skills:[fipa]{
@@ -274,7 +274,6 @@ species Bar skills:[fipa]{
 	int startHH <- 1;
 	int endHH <- 0;
 	bool happyHour <- false;
-	string type <- "bar";
 
 	aspect default {
 		draw rectangle(4, 4) color: #yellow;
@@ -282,15 +281,15 @@ species Bar skills:[fipa]{
 	
 	reflex happyHour when: (time = startHH) and (happyHour = false) {
 		write name + " Happy hour is starting!";
-		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type]];
-		endHH <-int(time+200);
+		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start']];
+		endHH <-int(time+10*rnd(10,20));
 		happyHour <- true;
 	}
 	
 	reflex endHappyHour when: (time = endHH) and (happyHour = true) {
-		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end', type] ];
+		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
 		write name + ' Happy hour has ended';
-		startHH <- int(time+30*rnd(2,3));
+		startHH <- int(time+10*rnd(1,5));
 		happyHour <- false;
 	}
 }
@@ -299,24 +298,9 @@ species RaveParty skills:[fipa]{
 	int startRP <- 1;
 	int endRP <- 0;
 	bool raveParty <- false;
-	string type <- "party";
 	
 	aspect default {
-		draw rectangle(4, 4) color: #black;
-	}
-	
-	reflex ravePart when: (time = startRP) and (raveParty = false) {
-		write name + " Rave Party is starting";
-		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start']];
-		endRP <-int(time+10*rnd(10,20));
-		raveParty <- true;
-	}
-	
-	reflex endHappyHour when: (time = endRP) and (raveParty = true) {
-		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
-		write name + ' Happy hour has ended';
-		endRP <- int(time+10*rnd(1,5));
-		raveParty <- false;
+		draw rectangle(4, 4) color: #purple;
 	}
 }
 
@@ -359,20 +343,19 @@ species RaveParty skills:[fipa]{
 
 
 species Stage skills:[fipa]{
-//	float betterLightShow <- rnd(0.0, 1.0);
-//	float betterVisuals <- rnd(0.0, 1.0);
-//	float goodSoundSystem <- rnd(0.0, 1.0);
-//	float famous <- rnd (0.0, 1.0);
-//	float popMusic <- rnd(0.0, 1.0);
-//	float rockMusic <- rnd(0.0, 1.0);
-//	float folksMusic <- rnd(0.0, 1.0);
-//	float jazzMusic <- rnd(0.0, 1.0); 
-//	string type1;
+	float betterLightShow <- rnd(0.0, 1.0);
+	float betterVisuals <- rnd(0.0, 1.0);
+	float goodSoundSystem <- rnd(0.0, 1.0);
+	float famous <- rnd (0.0, 1.0);
+	float popMusic <- rnd(0.0, 1.0);
+	float rockMusic <- rnd(0.0, 1.0);
+	float folksMusic <- rnd(0.0, 1.0);
+	float jazzMusic <- rnd(0.0, 1.0); 
+	string type;
 	int whenToStart<-1;
 	int whenToEnd<-0;
 //	list guestsList;
 	bool ongoing <- false;
-	string type <- "concert";
 	
 	rgb stage_color;
 	
@@ -383,40 +366,40 @@ species Stage skills:[fipa]{
 		
 	}
 	
-//	init{
-//		if(type1="pop"){
-//			popMusic <- 0.9;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.0;
-//		}else if(type1="rock"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.9;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.0;
-//		}else if(type1="folks"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.9;
-//			jazzMusic <- 0.0;
-//		}else if(type1="jazz"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.9;
-//		}
-//	}
-//	
+	init{
+		if(type="pop"){
+			popMusic <- 0.9;
+			rockMusic <- 0.0;
+			folksMusic <- 0.0;
+			jazzMusic <- 0.0;
+		}else if(type="rock"){
+			popMusic <- 0.0;
+			rockMusic <- 0.9;
+			folksMusic <- 0.0;
+			jazzMusic <- 0.0;
+		}else if(type="folks"){
+			popMusic <- 0.0;
+			rockMusic <- 0.0;
+			folksMusic <- 0.9;
+			jazzMusic <- 0.0;
+		}else if(type="jazz"){
+			popMusic <- 0.0;
+			rockMusic <- 0.0;
+			folksMusic <- 0.0;
+			jazzMusic <- 0.9;
+		}
+	}
+	
 	
 	reflex stageHostingConcert when: (time = whenToStart and ongoing=false)  {
 		
 //		if (flip(0.2)){
-//			betterLightShow <- rnd(0.0, 1.0);
-//	 		betterVisuals <- rnd(0.0, 1.0);
-//			goodSoundSystem <- rnd(0.0, 1.0);
-//			famous <- rnd (0.0, 1.0);
+			betterLightShow <- rnd(0.0, 1.0);
+	 		betterVisuals <- rnd(0.0, 1.0);
+			goodSoundSystem <- rnd(0.0, 1.0);
+			famous <- rnd (0.0, 1.0);
 			write name + ": concert is starting soon";
-			do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type] ];
+			do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', betterLightShow, betterVisuals, goodSoundSystem, famous, rockMusic, popMusic, folksMusic, jazzMusic] ];
 			whenToEnd <-int(time+10*rnd(10,20));
 			ongoing <- true;
 //		}
