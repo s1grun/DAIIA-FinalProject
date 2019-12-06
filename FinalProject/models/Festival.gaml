@@ -9,47 +9,35 @@ model Festival
 
 /* Insert your model definition here */
 global {
-	point agentLocation <- {50, 50};
-    int stage_color<-30;
-    list<string> genre <- ["rock", "pop", "folks", "jazz"];
-    list<string> guestTypes <- ["chill", "party", "bored", "tired", "journalist", ""];
+//	point agentLocation <- {50, 50};
+//    int stage_color<-30;
+//    list<string> genre <- ["rock", "pop", "folks", "jazz"];
+    list<string> guestTypes <- ["chill", "party", "bored", "drunk", "journalist"];
     
 	init {
 		
 		
-		int addDist <- 0;
+//		int addDist <- 0;
 		
 		point storeLocation1 <- {25, 25};
-		create Guests number: 10
-		{
-			//location <- {50 + addDist, 50 + addDist};
-			//addDist <- addDist + 5;
-		}
+		create Guests number: 1;
+//		{
+//			//location <- {50 + addDist, 50 + addDist};
+//			//addDist <- addDist + 5;
+//		}
 		
-		create Bar number: 1
-		{
-			//location <- {10 + addDist, 10 + addDist};
-			//addDist <- addDist + 10;
-		}
-//				create Stores number: 2 with: (type: "restaurant")
-//		{
-//			//location <- {10 + addDist, 10 + addDist};
-//			//addDist <- addDist + 10;
-//		}
-//		list<Stores> bar <- Stores where (each.type="Bar");
-//    	list<Stores> restaurant <- Stores where (each.type="Restaurant");
-//    	
-//		create Ic number: 1 with: (location: agentLocation)
-//		{
-//			
-//		}
+
+
 //		
 		
-		loop i from:0 to:3{
-			create Stage number: 1 with:(stage_color:rgb(rnd(255),rnd(255),rnd(255)),type:genre[i]);
-		}
+//		loop i from:0 to:3{
+//			create Stage number: 1 with:(stage_color:rgb(rnd(255),rnd(255),rnd(255)),type:);
+//		}
+		create Stage number: 2 with:(stage_color:#blue,type:"bar");
 		
-		create RaveParty number: 1;
+		create Stage number: 1 with:(stage_color:#yellow,type:"party");
+		
+		create Stage number: 1 with:(stage_color:#green,type:"concert");
 	
 	}
 	
@@ -65,7 +53,7 @@ species Guests skills:[moving, fipa]{
 	bool hungry <- flip(0.5);	//50% chance to be hungry true;
 	//or use int statusFeeling
 	int statusFeeling <- 0;    // var0 equals 0, 1 or 2; 0->nothing,1->thirsty,2->hungry
-	int movingStatus <- 0; // 0-> do wander,1-> go to Ic,2-> go to bar/restaurant,3 -> go back
+	
 	point storeDestination <- nil; // To store the location of a store
 	point returnBack <- rnd({0.0, 0.0, 0.0},{100.0,100.0,0.0});
 	point original_location;
@@ -85,23 +73,38 @@ species Guests skills:[moving, fipa]{
 	int status <- 0;
 	rgb my_color <- #blue;
 	string gType <- guestTypes[rnd(length(guestTypes) - 1)];
+	point dest <-nil;
+	list stage_list<-[];
+	int movingStatus <- 0; // 0-> do wander,1-> go to Ic,2-> go to bar/restaurant,3 -> go back
 	
 	init{
 		guestLocation<-location;
+		
 	}
 	
 	aspect default {
-		if(movingStatus=0 or movingStatus=3){
-			draw sphere(2) color:#green;
-		}else if(movingStatus=1){
-			draw sphere(2) color:#red;
-		}else if(movingStatus=2){
-			if(statusFeeling=1){
-				draw sphere(2) color:#blue;
-			}else{
-				draw sphere(2) color:#yellow;
-			}
-			
+//		if(movingStatus=0 or movingStatus=3){
+//			draw sphere(2) color:#green;
+//		}else if(movingStatus=1){
+//			draw sphere(2) color:#red;
+//		}else if(movingStatus=2){
+//			if(statusFeeling=1){
+//				draw sphere(2) color:#blue;
+//			}else{
+//				draw sphere(2) color:#yellow;
+//			}
+//			
+//		}
+		if(gType="drunk"){
+			draw circle(2) color:#red;
+		}else if(gType="party"){
+			draw circle(2) color:#yellow;
+		}else if(gType="chill"){
+			draw circle(2) color:#green;
+		}else if(gType="bored"){
+			draw circle(2) color:#gray;
+		}else if(gType="journalist"){
+			draw circle(2) color:#blue;
 		}
 		
 	}
@@ -112,250 +115,109 @@ species Guests skills:[moving, fipa]{
 //	{
 //		do wander;
 //	}
-	
-	reflex initalize when: statusFeeling = 0 and movingStatus =0 {
-		
-		do wander;
-		if (flip(0.05)){
-			statusFeeling <- rnd_choice([0.8,0.1,0.1]);
-			original_location <- location;
-			if statusFeeling !=0{
-				movingStatus <- 1;
+
+
+	reflex getInfo when:!(empty(informs)){
+		loop msg over: informs{
+			Stage spot<- Stage(agent(msg.sender));
+			if(msg.contents[0]="start"){
+				add spot to:stage_list;
+				if(flip(0.5)){
+					dest<- spot;
+					movingStatus <-1;
+				}
+
+			}else if(msg.contents[0]="end"){
+				remove spot from:stage_list;
+				if(dest!=nil){
+					if(dest=spot){
+						dest<- stage_list[rnd(length(stage_list) - 1)];
+						
+						movingStatus <-1;
+					}
+				}
 			}
-			
 		}
-		
-		
 			
 	}
 	
-	reflex goToIc when: statusFeeling != 0 and movingStatus =1
-	{
-		
-		do goto target:agentLocation;
-				
+	reflex goToStage when:movingStatus=1{
+		do goto target:dest;
 	}
 	
-//	reflex atIc when: ((movingStatus=1) and (location = agentLocation)) {
-//		
-//		ask Ic {
-//			//myself.storeDestination <- self.store_location;
-//			if (myself.statusFeeling=1){
-//				myself.storeDestination <- one_of(self.bar);
-////			 write  "go to "+myself.storeDestination;
-//			 
-//			}else if(myself.statusFeeling=2){
-//				myself.storeDestination <- one_of(self.restaurant);
-////				 write  "go to "+myself.storeDestination;
-//				 
-//			}
-// 
-//		}
-//		movingStatus <- 2;	
-//		
-//	}
-	
-	reflex goToStore when: movingStatus = 2 and statusFeeling !=0{
-		do goto target:storeDestination;
-		
+	reflex nearStage when: dest!=nil and distance_to(self,dest)<=10 and movingStatus=1{
+		movingStatus <- 2;
 	}
 	
-	reflex inStore when: location=storeDestination and movingStatus =2{
-		movingStatus <-3;
-		statusFeeling <-0;
+	reflex atStage when: movingStatus=2{
+		do wander;
 	}
 	
-	reflex returnback when: movingStatus =3{
-		do goto target:original_location;
-	}
+	
+	
+	
+	
+
 	
 	reflex inOriginal_location when: movingStatus =3 and location=original_location{
 		 movingStatus <-0;
 	}
 
-//	reflex goToStage when: !(empty(informs)) {
-//		loop msg over: informs{
-////			message msg <- informs[0];
-//			if(msg.contents[0]='start'){
-//				Stage informingConcert <- Stage(agent(msg.sender));
-////				write name+ " Receive inform from: " + informingConcert;
-//				string lightstr <- msg.contents[1];
-//				float light <- float(lightstr);
-//				string visualstr <- msg.contents[2];
-//				float visual <- float(visualstr);
-//				float sound <- float(msg.contents[3]);
-//				float famous1 <- float(msg.contents[4]);
-//				float rock <- float(msg.contents[5]);
-//				float pop <- float(msg.contents[6]);
-//				float folks <- float(msg.contents[7]);
-//				float jazz <- float(msg.contents[8]);
-//				
-//				
-////				do utility(light, visual, sound, famous1, rock, pop, folks, jazz, informingConcert);
-//				
-//				status<-1;
-////				fav_stage.guestsList <+ self;
-//				my_color <- fav_stage.stage_color;
-////				write name + act_util_list;
-////				write name+ " Going to: " + fav_stage;
-//			}else{
-////				write name +"reveice :"+msg.contents[0];
-//				status<-3;
-//				Stage sender <- Stage(agent(msg.sender));
-//				my_color <- #blue;
-////				write act_util_list;
-//				remove [fav_stage,util] from:act_util_list;
-////				write act_util_list;
-//				if(length(act_util_list)>1){
-//					util <- float(last(act_util_list)[1]);
-//					fav_stage <- last(act_util_list)[0];
-//					my_color <- fav_stage.stage_color;
-//					status <-1;
-//				}
-//				
-//				
-//			}	
-//		}
-		
-//	}
-	
-	
-//	reflex goingToStage when: status=1 {
-//		do goto target:fav_stage;
-//	}
-	
-//	
-//	reflex atStage when: fav_stage != nil and (location distance_to fav_stage) <5 and status=1{
-//		do wander;
-//		status<-2;
-//	}
-	
-//	reflex dancing when: status=2 {
-//		do wander;
+
+}
+
+//species Bar skills:[fipa]{
+////	string type;
+//	int startHH <- 1;
+//	int endHH <- 0;
+//	bool happyHour <- false;
+//	string type <- "bar";
 //
-//	}
-
-	
-	
-//	reflex goToMyLocation when: status=3 {
-//		do goto target:guestLocation;
-//		
-//	}
-	
-//	reflex atMyLocation when: (location = guestLocation) {
-//		status <- 0;
-//	}
-	
-	
-	
-//	action utility(float light, float visual, float sound, float famous1, float rock, float pop, float folks, float jazz, Stage sender) {
-//		float tmp <-  betterLightShow * light + betterVisuals * visual + goodSoundSystem * sound + famous * famous1 + rockMusic * rock + popMusic * pop + folksMusic * folks + jazzMusic * jazz;
-////		if tmp > util{
-////			util <- tmp;
-////			fav_stage <- sender;
-////		}
-//		act_util_list <+ [sender,tmp];
-//		act_util_list <- act_util_list sort_by (float(each[1]));
-//		util <- float(last(act_util_list)[1]);
-//		fav_stage <- last(act_util_list)[0];
-//		
-//	}
-	
-//	reflex meetOtherGuests when: statusFeeling = 1 and location=storeDestination and movingStatus =2 {
-//		if(gType = "") {
-//			
-//		}
-//	}
-//	
-}
-
-species Bar skills:[fipa]{
-//	string type;
-	int startHH <- 1;
-	int endHH <- 0;
-	bool happyHour <- false;
-	string type <- "bar";
-
-	aspect default {
-		draw rectangle(4, 4) color: #yellow;
-	}
-	
-	reflex happyHour when: (time = startHH) and (happyHour = false) {
-		write name + " Happy hour is starting!";
-		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type]];
-		endHH <-int(time+200);
-		happyHour <- true;
-	}
-	
-	reflex endHappyHour when: (time = endHH) and (happyHour = true) {
-		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end', type] ];
-		write name + ' Happy hour has ended';
-		startHH <- int(time+30*rnd(2,3));
-		happyHour <- false;
-	}
-}
-
-species RaveParty skills:[fipa]{
-	int startRP <- 1;
-	int endRP <- 0;
-	bool raveParty <- false;
-	string type <- "party";
-	
-	aspect default {
-		draw rectangle(4, 4) color: #black;
-	}
-	
-	reflex ravePart when: (time = startRP) and (raveParty = false) {
-		write name + " Rave Party is starting";
-		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start']];
-		endRP <-int(time+10*rnd(10,20));
-		raveParty <- true;
-	}
-	
-	reflex endHappyHour when: (time = endRP) and (raveParty = true) {
-		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
-		write name + ' Happy hour has ended';
-		endRP <- int(time+10*rnd(1,5));
-		raveParty <- false;
-	}
-}
-
-//species Ic {
-//	list bar;
-//	list restaurant;
-//	init{
-//		ask agents of_species Stores{
-//			if (self.type = "bar"){
-//				add location to: myself.bar;
-//			}
-//			if (self.type = "restaurant"){
-//				add location to: myself.restaurant;
-//			}
-//			
-//			
-////			write location;
-//		}
-//		//write store_location;
-//	}
 //	aspect default {
-//		draw rectangle(4, 4) color:#red;
-//		
-//	}
-	
-//	action returnStoreLocation (int statusOfGuest) {
-//		return 1;
+//		draw rectangle(4, 4) color: #yellow;
 //	}
 //	
-//	point Guests;
-	
-//	reflex get_store when: Guests != nil 
-//	{
-//		do goto target
+//	reflex happyHour when: (time = startHH) and (happyHour = false) {
+//		write name + " Happy hour is starting!";
+//		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type]];
+//		endHH <-int(time+200);
+//		happyHour <- true;
 //	}
-//	ask Stores at_distance Guests{
-//		
+//	
+//	reflex endHappyHour when: (time = endHH) and (happyHour = true) {
+//		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end', type] ];
+//		write name + ' Happy hour has ended';
+//		startHH <- int(time+30*rnd(2,3));
+//		happyHour <- false;
 //	}
 //}
+//
+//species RaveParty skills:[fipa]{
+//	int startRP <- 1;
+//	int endRP <- 0;
+//	bool raveParty <- false;
+//	string type <- "party";
+//	
+//	aspect default {
+//		draw rectangle(4, 4) color: #black;
+//	}
+//	
+//	reflex ravePart when: (time = startRP) and (raveParty = false) {
+//		write name + " Rave Party is starting";
+//		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start']];
+//		endRP <-int(time+10*rnd(10,20));
+//		raveParty <- true;
+//	}
+//	
+//	reflex endHappyHour when: (time = endRP) and (raveParty = true) {
+//		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
+//		write name + ' Happy hour has ended';
+//		endRP <- int(time+10*rnd(1,5));
+//		raveParty <- false;
+//	}
+//}
+
+
 
 
 species Stage skills:[fipa]{
@@ -372,13 +234,13 @@ species Stage skills:[fipa]{
 	int whenToEnd<-0;
 //	list guestsList;
 	bool ongoing <- false;
-	string type <- "concert";
+	string type;
 	
 	rgb stage_color;
 	
 	aspect { 
 		
-		draw cube(4) color:stage_color;
+		draw rectangle(4, 4) color:stage_color;
 		
 		
 	}
@@ -415,9 +277,9 @@ species Stage skills:[fipa]{
 //	 		betterVisuals <- rnd(0.0, 1.0);
 //			goodSoundSystem <- rnd(0.0, 1.0);
 //			famous <- rnd (0.0, 1.0);
-			write name + ": concert is starting soon";
-			do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type] ];
-			whenToEnd <-int(time+10*rnd(10,20));
+			write name + ": "+type+" is starting soon";
+			do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start'] ];
+			whenToEnd <-int(time+20*rnd(10,20));
 			ongoing <- true;
 //		}
 		
@@ -427,7 +289,7 @@ species Stage skills:[fipa]{
 		
 		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
 		
-		write name + ' eeeeeeeeeend concert';
+		write name + 'end '+ type;
 		whenToStart <- int(time+10*rnd(1,5));
 		ongoing <- false;
 		
@@ -440,8 +302,8 @@ experiment festival type:gui{
 	output{
 		display map type: opengl {
 			species Guests;
-			species Bar;
-//			species Ic;
+//			species Bar;
+
 			species Stage;
 			
 			//graphics "env" {
@@ -449,10 +311,10 @@ experiment festival type:gui{
         	//}
         
 		}
-		display chart {
-			chart "How often guests get thirsty" {
-				data "thirsty guests" value: length (Guests where (each.statusFeeling = 1));
-			}
-		}
+//		display chart {
+//			chart "How often guests get thirsty" {
+//				data "thirsty guests" value: length (Guests where (each.statusFeeling = 1));
+//			}
+//		}
 	}
 }
