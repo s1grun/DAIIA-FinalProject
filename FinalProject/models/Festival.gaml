@@ -75,7 +75,10 @@ species Guests skills:[moving, fipa]{
 	string gType <- guestTypes[rnd(length(guestTypes) - 1)];
 	point dest <-nil;
 	list stage_list<-[];
-	int movingStatus <- 0; // 0-> do wander,1-> go to Ic,2-> go to bar/restaurant,3 -> go back
+	int movingStatus <- 0; // 0-> do wander,1-> go to stage,2-> at stage;
+	int interaction <-0; //0->no interaction, 1->interact with someone.
+	float generous <- rnd(0.0,1.0);
+	list friends <-[];
 	
 	init{
 		guestLocation<-location;
@@ -145,12 +148,35 @@ species Guests skills:[moving, fipa]{
 		do goto target:dest;
 	}
 	
-	reflex nearStage when: dest!=nil and distance_to(self,dest)<=10 and movingStatus=1{
+	reflex nearStage when: dest!=nil and distance_to(self,dest)<=7 and movingStatus=1{
 		movingStatus <- 2;
 	}
 	
+	
 	reflex atStage when: movingStatus=2{
 		do wander;
+		
+		
+		if(gType="drunk"){
+			ask Guests at_distance 3{
+				if(flip(0.3)){
+					add self to:myself.friends;
+					add myself to: self.friends;
+				}
+			}
+		}else if(gType="party"){
+			draw circle(2) color:#yellow;
+		}else if(gType="chill"){
+			draw circle(2) color:#green;
+		}else if(gType="bored"){
+			draw circle(2) color:#gray;
+		}else if(gType="journalist"){
+			draw circle(2) color:#blue;
+		}
+		
+		
+
+		
 	}
 	
 	
