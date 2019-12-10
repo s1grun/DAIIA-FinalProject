@@ -11,8 +11,8 @@ model Festival
 global {
 //	point agentLocation <- {50, 50};
 //    int stage_color<-30;
-//    list<string> genre <- ["rock", "pop", "folks", "jazz"];
-    list<string> guestTypes <- ["chill", "party", "bored", "drunk", "journalist"];
+    list<string> genre <- ["rock", "pop", "folks", "jazz"];
+    list<string> guestTypes <- ["chill", "party", "tired", "drunk", "journalist"];
     
 	init {
 		
@@ -62,10 +62,10 @@ species Guests skills:[moving, fipa]{
 //	float betterVisuals <- rnd(0.2, 1.0);
 //	float goodSoundSystem <- rnd(0.3, 1.0);
 //	float famous <- rnd (0.0, 1.0);
-//	float popMusic <- rnd(0.0, 1.0);
-//	float rockMusic <- rnd(0.0, 1.0);
-//	float folksMusic <- rnd(0.0, 1.0);
-//	float jazzMusic <- rnd(0.0, 1.0);
+	float popMusic <- rnd(0.0, 1.0);
+	float rockMusic <- rnd(0.0, 1.0);
+	float folksMusic <- rnd(0.0, 1.0);
+	float jazzMusic <- rnd(0.0, 1.0);
 //	Stage fav_stage;
 	point guestLocation <- nil;
 	float util<-0.0;
@@ -73,38 +73,34 @@ species Guests skills:[moving, fipa]{
 	int status <- 0;
 	rgb my_color <- #blue;
 	string gType <- guestTypes[rnd(length(guestTypes) - 1)];
-	point dest <-nil;
+	Stage dest <-nil;
 	list stage_list<-[];
 	int movingStatus <- 0; // 0-> do wander,1-> go to stage,2-> at stage;
 	int interaction <-0; //0->no interaction, 1->interact with someone.
 	float generous <- rnd(0.0,1.0);
-	list friends <-[];
+	Guests friend <- nil;
+	float happy <- rnd(0.0,0.5);
+	float sleepy <- rnd(0.0,0.5);
+	float angry <- rnd(0.0,0.5);
+	
 	
 	init{
 		guestLocation<-location;
+		if(gType="tired"){
+			sleepy <- 0.5;
+		}
 		
 	}
 	
 	aspect default {
-//		if(movingStatus=0 or movingStatus=3){
-//			draw sphere(2) color:#green;
-//		}else if(movingStatus=1){
-//			draw sphere(2) color:#red;
-//		}else if(movingStatus=2){
-//			if(statusFeeling=1){
-//				draw sphere(2) color:#blue;
-//			}else{
-//				draw sphere(2) color:#yellow;
-//			}
-//			
-//		}
+
 		if(gType="drunk"){
 			draw circle(2) color:#red;
 		}else if(gType="party"){
 			draw circle(2) color:#yellow;
 		}else if(gType="chill"){
 			draw circle(2) color:#green;
-		}else if(gType="bored"){
+		}else if(gType="tired"){
 			draw circle(2) color:#gray;
 		}else if(gType="journalist"){
 			draw circle(2) color:#blue;
@@ -153,30 +149,120 @@ species Guests skills:[moving, fipa]{
 	}
 	
 	
-	reflex atStage when: movingStatus=2{
+	reflex atStage when: movingStatus=2 and friend=nil{
 		do wander;
 		
 		
 		if(gType="drunk"){
 			ask Guests at_distance 3{
-				if(flip(0.3)){
-					add self to:myself.friends;
-					add myself to: self.friends;
+					if(self.gType="drunk"){
+						if(flip(0.9)){
+							write myself.name +":drunk guy make friends with "+self.name+":drunk guy";
+							myself.friend<- self;
+							self.friend<- myself;
+							myself.happy<-myself.happy+0.1;
+							self.happy<-self.happy+0.1;
+						}
+					}else if(self.gType="journalist"){
+						if(flip(0.3)){
+							write myself.name +":drunk guy interview with "+self.name+":journalist, jouranlist get angry and drunk guy get happy";
+							self.angry <- self.angry+0.1;
+							myself.happy<-myself.happy+0.1;
+						}
+					}else{
+						if(self.happy>=0.5){
+							write myself.name + ":drunk guy meet "+ self.gType+" ";
+						}
+						
+					}
+					
+				}
+		}else if(gType="party"){
+			if(dest.type="party"){
+				ask Guests at_distance 3{
+					if(self.gType="tired"){
+						if(sleepy<=0.7 and flip(0.3)){
+							myself.friend<- self;
+							self.friend<- myself;
+						}
+					}else{
+						if(flip(0.7)){
+							myself.friend<- self;
+							self.friend<- myself;
+						}
+					}
+				}
+			}else{
+				ask Guests at_distance 3{
+					if(flip(0.3)){
+							myself.friend<- self;
+							self.friend<- myself;
+					}
 				}
 			}
-		}else if(gType="party"){
-			draw circle(2) color:#yellow;
 		}else if(gType="chill"){
-			draw circle(2) color:#green;
-		}else if(gType="bored"){
-			draw circle(2) color:#gray;
+			ask Guests at_distance 3{
+				if(self.gType="tired"){
+					if(sleepy<=0.7 and flip(0.5)){
+						myself.friend<- self;
+						self.friend<- myself;
+					}
+				}else{
+					if(flip(0.7)){
+						myself.friend<- self;
+						self.friend<- myself;
+					}
+				}
+			}
+
+			
+		}else if(gType="tired"){
+		
+			if(length(Guests at_distance 3)>5 or sleepy>0.7){
+				write "tired guy leave the "+dest.type;
+			}else{
+				ask Guests at_distance 3{
+					if(self.gType!="tired"){
+						myself.friend<- self;
+						self.friend<- myself;
+					}
+				}
+			}
+			
+			
 		}else if(gType="journalist"){
-			draw circle(2) color:#blue;
+//			draw circle(2) color:#blue;
+			ask Guests at_distance 3{
+				if(self.gType!="tired"){
+					if(flip(0.3) and sleepy<=0.7){
+						myself.friend<- self;
+						self.friend<- myself;
+					}
+				}else{
+					if(flip(0.5)){
+						myself.friend<- self;
+						self.friend<- myself;
+					}
+				}
+			}
+		}
+
+	}
+	
+	reflex withFriend when: movingStatus=2 and friend!=nil{
+		
+		if(gType="drunk"){
+			
+		}else if(gType="party"){
+			
+		}else if(gType="chill"){
+			
+		}else if(gType="tired"){
+			
+		}else if(gType="journalist"){
+			
 		}
 		
-		
-
-		
 	}
 	
 	
@@ -185,9 +271,9 @@ species Guests skills:[moving, fipa]{
 	
 
 	
-	reflex inOriginal_location when: movingStatus =3 and location=original_location{
-		 movingStatus <-0;
-	}
+//	reflex inOriginal_location when: movingStatus =3 and location=original_location{
+//		 movingStatus <-0;
+//	}
 
 
 }
@@ -304,7 +390,13 @@ species Stage skills:[fipa]{
 //			goodSoundSystem <- rnd(0.0, 1.0);
 //			famous <- rnd (0.0, 1.0);
 			write name + ": "+type+" is starting soon";
-			do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start'] ];
+			if(type="concert"){
+				string concert_type<- genre[rnd(length(genre)-1)];
+				write "concert type:"+ concert_type;
+				do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start',concert_type] ];
+			}else{
+				do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start'] ];
+			}
 			whenToEnd <-int(time+20*rnd(10,20));
 			ongoing <- true;
 //		}
