@@ -12,10 +12,11 @@ global {
 //	point agentLocation <- {50, 50};
 //    int stage_color<-30;
 //    list<string> genre <- ["rock", "pop", "folks", "jazz"];
-    list<string> guestTypes <- ["chill", "party", "bored", "drunk", "journalist"];
+    list<string> guestTypes <- ["chill", "party", "tired", "drunk", "journalist"];
     string at_bar <- "at bar location";
     string empty_bar_location <- "empty bar location";
     predicate find_bar <- new_predicate("find bar");
+    predicate choose_bar <- new_predicate("choose a bar");
     predicate bar_location <- new_predicate(at_bar);
     predicate order_beer <- new_predicate("order beer at bar");
     predicate has_beer <- new_predicate("has beer");
@@ -83,34 +84,23 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	point dest <-nil;
 	list stage_list<-[];
 	int movingStatus <- 0; // 0-> do wander,1-> go to Ic,2-> go to bar/restaurant,3 -> go back
-	float distance <- 5.0;
+	float distance <- 8.0;
 	point target;
 		
 	init{
 		guestLocation<-location;
-		do add_desire(order_beer);
+		do add_desire(find_bar);
 	}
 	
 	aspect default {
-//		if(movingStatus=0 or movingStatus=3){
-//			draw sphere(2) color:#green;
-//		}else if(movingStatus=1){
-//			draw sphere(2) color:#red;
-//		}else if(movingStatus=2){
-//			if(statusFeeling=1){
-//				draw sphere(2) color:#blue;
-//			}else{
-//				draw sphere(2) color:#yellow;
-//			}
-//			
-//		}
+
 		if(gType="drunk"){
 			draw circle(2) color:#red;
 		}else if(gType="party"){
 			draw circle(2) color:#yellow;
 		}else if(gType="chill"){
 			draw circle(2) color:#green;
-		}else if(gType="bored"){
+		}else if(gType="tired"){
 			draw circle(2) color:#gray;
 		}else if(gType="journalist"){
 			draw circle(2) color:#blue;
@@ -119,50 +109,69 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	}
 	
 	perceive target: Stage where (each.beers > 0) in: distance {
-    	focus id: at_bar var:location;
+    	focus id:at_bar var:location;
+//    	write "find bar";
     	ask myself {
-        	do remove_intention(order_beer, false);
+        	do remove_intention(find_bar, false);
    		 }
     }
     
     rule belief: bar_location new_desire: order_beer strength: 2.0;
     rule belief: order_beer new_desire: drink_beer strength: 3.0;
+    rule belief: drink_beer new_desire: finish_beer strength: 4.0;
     
-//    plan lets_wander intention: find_bar {
+    plan lets_wander intention: find_bar {
 //    	write name + "searching for bar";
-//    	do wander;
-//    }
+    	do wander;
+    }
     
     plan get_beer intention:order_beer {
+//		write "order beer";
     	if (target = nil) {
-    		write target;
-        	do add_subintention(get_current_intention(),find_bar, true);
+//    		write target;
+        	do add_subintention(get_current_intention(),choose_bar, true);
         	do current_intention_on_hold();
     	} else {
-        	do goto target: target ;
-        	if (target = location){
-        		write target;
-        		Stage current_bar <- Stage first_with (target = each.location);
-        		if current_bar.beers > 0 {
-        			write name +" orders one bear";
-            		do add_belief(order_beer);
-            		ask current_bar {beers <- beers - 1;
-            	}    
-        	} else {
-            	do add_belief(new_predicate(empty_bar_location, ["location_value"::target]));
-        	}
-//        		target <- nil;
+        	do goto target: target;
+	        	if (target = location){
+//	        		write target;
+	        		Stage current_bar <- Stage first_with (target = each.location);
+	        		if current_bar.beers > 0 {
+	        			write name +" orders one beer";
+	            		do add_belief(order_beer);
+	            		ask current_bar {beers <- beers - 1;
+	            	}    
+	        	} else {
+	        		write "no beer in the bar";
+//	            	do add_belief(new_predicate(empty_bar_location, ["location_value"::target]));
+	        	}
+        		target <- nil;
         	}
     	}   
     }
     
-//    plan enjoy_beer intention:drink_beer {
-//		write name + " drinks bear";
+    
+    plan choose_bar intention: choose_bar instantaneous: true {
+        list<point> possible_bars <- get_beliefs_with_name(at_bar) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+//        list<point> empty_mines <- get_beliefs_with_name(empty_mine_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+//        possible_mines <- possible_mines - empty_mines;
+        if (empty(possible_bars)) {
+            do remove_intention(order_beer, true); 
+        } else {
+            target <- (possible_bars with_min_of (each distance_to self)).location;
+        }
+        do remove_intention(choose_bar, true); 
+    }
+    
+    plan enjoy_beer intention:drink_beer {
+		write name + " drinks beer";
 //    	do wander;	
-//    }
+		do remove_belief(order_beer);
+		do remove_intention(drink_beer, true);        
+    }
     
     plan return_to_base intention: finish_beer {
-    	write name + " very good bear";
+    	write name + " very good beer";
         do remove_belief(order_beer);
         do remove_intention(finish_beer, true);        
     }
@@ -175,51 +184,51 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 //	}
 
 
-	reflex getInfo when:!(empty(informs)){
-		loop msg over: informs{
-			Stage spot<- Stage(agent(msg.sender));
-			if(msg.contents[0]="start"){
-				add spot to:stage_list;
-				if(flip(0.5)){
-					dest<- spot;
-					movingStatus <-1;
-				}
-
-			}else if(msg.contents[0]="end"){
-				remove spot from:stage_list;
-				if(dest!=nil){
-					if(dest=spot){
-						dest<- stage_list[rnd(length(stage_list) - 1)];
-						
-						movingStatus <-1;
-					}
-				}
-			}
-		}
-			
-	}
-	
-	reflex goToStage when:movingStatus=1{
-		do goto target:dest;
-	}
-	
-	reflex nearStage when: dest!=nil and distance_to(self,dest)<=10 and movingStatus=1{
-		movingStatus <- 2;
-	}
-	
-	reflex atStage when: movingStatus=2{
-		do wander;
-	}
-	
-	
-	
-	
-	
-
-	
-	reflex inOriginal_location when: movingStatus =3 and location=original_location{
-		 movingStatus <-0;
-	}
+//	reflex getInfo when:!(empty(informs)){
+//		loop msg over: informs{
+//			Stage spot<- Stage(agent(msg.sender));
+//			if(msg.contents[0]="start"){
+//				add spot to:stage_list;
+//				if(flip(0.5)){
+//					dest<- spot;
+//					movingStatus <-1;
+//				}
+//
+//			}else if(msg.contents[0]="end"){
+//				remove spot from:stage_list;
+//				if(dest!=nil){
+//					if(dest=spot){
+//						dest<- stage_list[rnd(length(stage_list) - 1)];
+//						
+//						movingStatus <-1;
+//					}
+//				}
+//			}
+//		}
+//			
+//	}
+//	
+//	reflex goToStage when:movingStatus=1{
+//		do goto target:dest;
+//	}
+//	
+//	reflex nearStage when: dest!=nil and distance_to(self,dest)<=10 and movingStatus=1{
+//		movingStatus <- 2;
+//	}
+//	
+//	reflex atStage when: movingStatus=2{
+//		do wander;
+//	}
+//	
+//	
+//	
+//	
+//	
+//
+//	
+//	reflex inOriginal_location when: movingStatus =3 and location=original_location{
+//		 movingStatus <-0;
+//	}
 
 
 }
