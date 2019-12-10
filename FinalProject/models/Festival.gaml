@@ -13,6 +13,11 @@ global {
 //    int stage_color<-30;
     list<string> genre <- ["rock", "pop", "folks", "jazz"];
     list<string> guestTypes <- ["chill", "party", "tired", "drunk", "journalist"];
+    list<Guests> tiredList <-[];
+    list<Guests> partyList <-[];
+    list<Guests> chillList <-[];
+    list<Guests> drunkList <-[];
+    list<Guests> journalistList <-[];
     
 	init {
 		
@@ -20,11 +25,25 @@ global {
 //		int addDist <- 0;
 		
 		point storeLocation1 <- {25, 25};
-		create Guests number: 1;
+		create Guests number: 50;
 //		{
 //			//location <- {50 + addDist, 50 + addDist};
 //			//addDist <- addDist + 5;
 //		}
+
+		loop gu over:Guests{
+			if(gu.gType="tired"){
+				add gu to:tiredList;
+			}else if(gu.gType="party"){
+				add gu to:partyList;
+			}else if(gu.gType = "chill"){
+				add gu to:chillList;
+			}else if(gu.gType="drunk"){
+				add gu to:drunkList;
+			}else if(gu.gType="journalist"){
+				add gu to:journalistList;
+			}
+		}
 		
 
 
@@ -82,6 +101,8 @@ species Guests skills:[moving, fipa]{
 	float happy <- rnd(0.0,0.5);
 	float sleepy <- rnd(0.0,0.5);
 	float angry <- rnd(0.0,0.5);
+	float partyMood <- rnd(0.0,0.5);
+	string count;
 	
 	
 	init{
@@ -160,14 +181,14 @@ species Guests skills:[moving, fipa]{
 							write myself.name +":drunk guy make friends with "+self.name+":drunk guy";
 							myself.friend<- self;
 							self.friend<- myself;
-							myself.happy<-myself.happy+0.1;
-							self.happy<-self.happy+0.1;
+//							myself.happy<-myself.happy+0.1;
+//							self.happy<-self.happy+0.1;
 						}
 					}else if(self.gType="journalist"){
 						if(flip(0.3)){
 							write myself.name +":drunk guy interview with "+self.name+":journalist, jouranlist get angry and drunk guy get happy";
-							self.angry <- self.angry+0.1;
-							myself.happy<-myself.happy+0.1;
+//							self.angry <- self.angry+0.1;
+//							myself.happy<-myself.happy+0.1;
 						}
 					}else{
 						if(self.happy>=0.5){
@@ -252,14 +273,166 @@ species Guests skills:[moving, fipa]{
 	reflex withFriend when: movingStatus=2 and friend!=nil{
 		
 		if(gType="drunk"){
-			
+			if(friend.gType="chill"){
+				if(flip(0.2)){
+					if(generous > 0.25){
+						write gType + " is feeling generous and buys " + friend.gType + " a drink";
+						self.happy <- self.happy+0.4;
+						self.angry <- self.angry-0.3;
+						self.generous <- self.generous+0.2;
+						self.sleepy <- self.sleepy+0.1;
+						friend.happy <- friend.happy+0.4;
+						friend.angry <- friend.angry-0.3;
+						friend.generous <- friend.generous+0.2;
+						friend.sleepy <- friend.sleepy+0.1;
+						count <- "generous";
+					}
+					else if(angry > 0.2){
+						write gType + " is feeling angry when he meets " + friend.gType;
+						self.happy <- self.happy-0.3;
+						self.angry <- self.angry+0.3;
+						self.generous <- self.generous-0.2;
+						self.sleepy <- self.sleepy+0.2;
+						friend.angry <- friend.angry+0.5;
+						friend.happy <- friend.happy-0.2;
+						friend.generous <- friend.generous-0.2;
+						friend.sleepy <- friend.sleepy+0.2;
+					}
+					else if(happy > 0.2){
+						write gType + " is feeling happy and chats with " + friend.gType;
+						self.happy <- self.happy+0.5;
+						self.angry <- self.angry-0.3;
+						self.generous <- self.generous+0.1;
+						self.sleepy <- self.sleepy-0.2;
+						friend.happy <- friend.happy+0.5;
+						friend.angry <- friend.angry-0.3;
+						friend.generous <- friend.generous+0.1;
+						self.sleepy <- self.sleepy-0.2;
+						count <- "happy";
+					}
+				}
+			}
 		}else if(gType="party"){
-			
+			if(friend.gType="journalist"){
+				if(flip(0.2)){
+					if(angry > 0.25){
+						write gType + " is angry and does not want to be interviewed by " + friend.gType;
+						self.angry <- self.angry+0.3;
+						self.happy <- self.happy-0.2;
+						self.generous <- self.generous-0.2;
+						friend.angry <- friend.angry+0.3;
+						friend.happy <- friend.happy-0.2;
+						friend.generous <- friend.generous-0.2;	
+					} 
+					else if(happy > 0.25) {
+						write gType + " is feeling happy and is willing to answer questions from the " + friend.gType;
+						self.angry <- self.angry-0.3;
+						self.happy <- self.happy+0.2;
+						self.generous <- self.generous+0.2;
+						friend.angry <- friend.angry-0.3;
+						friend.happy <- friend.happy+0.2;
+						friend.generous <- friend.generous+0.2;
+						count <- "happy";
+						
+					} 
+					else if(sleepy > 0.4){
+						write gType + " is feeling sleepy and answers a few questions from the " + friend.gType;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.1;
+						self.generous <- self.generous+0.1;
+						self.sleepy <- self.sleepy+0.2;
+						friend.happy <- friend.happy+0.2;
+						friend.angry <- friend.angry-0.1;
+						friend.generous <- friend.generous+0.1;
+						friend.sleepy <- friend.sleepy+0.2;
+					}
+				}
+			}
 		}else if(gType="chill"){
+			if(friend.gType="journalist"){
+				if(flip(0.2)){
+					if(happy > 0.15){
+						write gType + " is feeling happy and is interviewed by " + friend.gType;
+						self.happy <- self.happy+0.5;
+						self.angry <- self.angry-0.3;
+						self.generous <- self.generous+0.1;
+						friend.happy <- friend.happy+0.5;
+						friend.angry <- friend.angry-0.3;
+						friend.generous <- friend.generous+0.1;
+						count <- "happy";
+					}
+					else if(angry > 0.4){
+						write gType + " is feeling angry and does not want to be interviewed by " + friend.gType;
+						self.happy <- self.happy-0.2;
+						self.angry <- self.angry+0.2;
+						self.generous <- self.generous-0.1;
+						friend.happy <- friend.happy-0.2;
+						friend.angry <- friend.angry+0.3;
+						friend.generous <- friend.generous-0.1;
+					}
+					else if(generous > 0.2){
+						write gType + " is feeling generous and is interviewed by " + friend.gType;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.2;
+						self.generous <- self.generous+0.3;
+						friend.happy <- friend.happy+0.2;
+						friend.angry <- friend.angry-0.3;
+						friend.generous <- friend.generous+0.1;
+						count <- "generous";
+					}
+				}
+			}
 			
 		}else if(gType="tired"){
+			if(friend.gType="tired"){
+				if(flip(0.2)){
+					if(sleepy < 0.25 and happy > 0.15){
+						write gType + " is hanging out with another " + friend.gType;
+						self.sleepy <- self.sleepy+0.2;
+						self.happy <- self.happy+0.1;
+						self.angry <- self.angry-0.1;
+						friend.sleepy <- friend.sleepy+0.2;
+						friend.happy <- friend.happy+0.1;
+						friend.angry <- friend.angry-0.1;
+						count <- "happy";
+					}
+					else if(angry > 0.25){
+						write gType + " is angry and unfriends " + friend.gType;
+						self.sleepy <- self.sleepy+0.1;
+						self.happy <- self.happy-0.1;
+						self.angry <- self.angry+0.1;
+						friend.sleepy <- friend.sleepy+0.1;
+						friend.happy <- friend.happy-0.1;
+						friend.angry <- friend.angry+0.1;
+						friend <- nil;
+					}
+				}
+			}
 			
 		}else if(gType="journalist"){
+			if(friend.gType="tired"){
+				if(flip(0.2)){
+					if(happy > 0.15 and sleepy < 0.2){
+						write gType + " takes an interview with " + friend.gType;
+						self.sleepy <- self.sleepy+0.3;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.15;
+						friend.sleepy <- self.sleepy+0.3;
+						friend.happy <- friend.happy+0.2;
+						friend.angry <- friend.angry-0.15;
+						count <- "happy";
+					}
+					else if(angry > 0.3 and friend.sleepy > 0.4){
+						write gType + " is too angry to interview such a sleepy person " + friend.gType;
+						self.sleepy <- self.sleepy+0.1;
+						self.happy <- self.happy-0.2;
+						self.angry <- self.angry+0.2;
+						friend.sleepy <- self.sleepy+0.1;
+						friend.happy <- friend.happy-0.2;
+						friend.angry <- friend.angry+0.2;
+					}
+				}
+			}
 			
 		}
 		
@@ -429,10 +602,28 @@ experiment festival type:gui{
         	//}
         
 		}
-//		display chart {
-//			chart "How often guests get thirsty" {
-//				data "thirsty guests" value: length (Guests where (each.statusFeeling = 1));
-//			}
-//		}
+		display chart_display refresh:every(10#cycles) {
+             chart "Road Status" type: series size: {1, 0.5} position: {0, 0} {
+                data "Happiness1" value: mean (partyList collect each.happy) style: line color: #green;
+             	data "Angry1" value: mean (partyList collect each.angry) style: line color: #red;
+             	data "Sleepy1" value: mean (partyList collect each.sleepy) style: line color: #purple;
+             	data "Happiness2" value: mean (tiredList collect each.happy) style: line color: #yellow;
+             	data "Angry2" value: mean (tiredList collect each.angry) style: line color: #gray;
+             	data "Sleepy2" value: mean (tiredList collect each.sleepy) style: line color: #black;
+             	
+        	}
+             chart "Guests traits" type: pie style: exploded size: {1, 0.5} position: {0, 0.5}{
+           		data "Party guests happiness" value: partyList collect (each.happy) color: #magenta ;
+           		data "Tired guests happiness" value: tiredList collect (each.happy) color: #blue ;
+           		data "Chilled guests happiness" value: chillList collect (each.happy) color: #green ;
+           		data "Drunk guests happiness" value: drunkList collect (each.happy) color: #orange ;
+           		data "Journalist guests happiness" value: journalistList collect (each.happy) color: #red ;	
+         	 }
+         
+ 	
+     }
+         
 	}
+
+	
 }
