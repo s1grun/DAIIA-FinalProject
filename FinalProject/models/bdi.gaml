@@ -22,6 +22,8 @@ global {
     predicate has_beer <- new_predicate("has beer");
     predicate drink_beer <- new_predicate("drink beer");
     predicate finish_beer <- new_predicate("finish beer");
+    predicate go_back <- new_predicate("go back");
+    
     
 	init {
 		
@@ -57,7 +59,7 @@ global {
 
 species Guests skills:[moving, fipa] control:simple_bdi{
 //	rgb guestColor <- #green;
-	bool thirsty <- flip(0.5); //50% chance to be thirsty true;
+	bool thirsty <- false; 
 	bool hungry <- flip(0.5);	//50% chance to be hungry true;
 	//or use int statusFeeling
 	int statusFeeling <- 0;    // var0 equals 0, 1 or 2; 0->nothing,1->thirsty,2->hungry
@@ -86,10 +88,11 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	int movingStatus <- 0; // 0-> do wander,1-> go to Ic,2-> go to bar/restaurant,3 -> go back
 	float distance <- 8.0;
 	point target;
+	
 		
 	init{
 		guestLocation<-location;
-		do add_desire(find_bar);
+		
 	}
 	
 	aspect default {
@@ -108,6 +111,18 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 		
 	}
 	
+	reflex default_action{
+		if(flip(0.5) and thirsty= false){
+			thirsty <- true;
+			write name +" is thirsty!";
+			do add_desire(find_bar);
+		}
+	} 
+	
+	
+	
+	
+	
 	perceive target: Stage where (each.beers > 0) in: distance {
     	focus id:at_bar var:location;
 //    	write "find bar";
@@ -119,6 +134,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     rule belief: bar_location new_desire: order_beer strength: 2.0;
     rule belief: order_beer new_desire: drink_beer strength: 3.0;
     rule belief: drink_beer new_desire: finish_beer strength: 4.0;
+//    rule belief: finish_beer new_desire: go_back strength: 5.0;
     
     plan lets_wander intention: find_bar {
 //    	write name + "searching for bar";
@@ -126,7 +142,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     }
     
     plan get_beer intention:order_beer {
-//		write "order beer";
+//		write "order beer111111";
     	if (target = nil) {
 //    		write target;
         	do add_subintention(get_current_intention(),choose_bar, true);
@@ -139,10 +155,12 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	        		if current_bar.beers > 0 {
 	        			write name +" orders one beer";
 	            		do add_belief(order_beer);
-	            		ask current_bar {beers <- beers - 1;
-	            	}    
+	            		
+						do remove_intention(order_beer,true);
+
 	        	} else {
 	        		write "no beer in the bar";
+//	        		do remove_intention(order_beer,true);
 //	            	do add_belief(new_predicate(empty_bar_location, ["location_value"::target]));
 	        	}
         		target <- nil;
@@ -152,13 +170,13 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     
     
     plan choose_bar intention: choose_bar instantaneous: true {
-        list<point> possible_bars <- get_beliefs_with_name(at_bar) collect (point(get_predicate(mental_state (each)).values["location_value"]));
+        list<point> bar_list <- get_beliefs_with_name(at_bar) collect (point(get_predicate(mental_state (each)).values["location_value"]));
 //        list<point> empty_mines <- get_beliefs_with_name(empty_mine_location) collect (point(get_predicate(mental_state (each)).values["location_value"]));
 //        possible_mines <- possible_mines - empty_mines;
-        if (empty(possible_bars)) {
+        if (empty(bar_list)) {
             do remove_intention(order_beer, true); 
         } else {
-            target <- (possible_bars with_min_of (each distance_to self)).location;
+            target <- (bar_list with_min_of (each distance_to self)).location;
         }
         do remove_intention(choose_bar, true); 
     }
@@ -166,15 +184,36 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     plan enjoy_beer intention:drink_beer {
 		write name + " drinks beer";
 //    	do wander;	
+		
+		do add_belief(drink_beer);
 		do remove_belief(order_beer);
-		do remove_intention(drink_beer, true);        
+		do remove_intention(drink_beer, true); 
+			      
     }
     
     plan return_to_base intention: finish_beer {
-    	write name + " very good beer";
-        do remove_belief(order_beer);
-        do remove_intention(finish_beer, true);        
+//    	write "finish beer";
+    	do goto target:guestLocation;
+//        do remove_belief(drink_beer);
+		if(location = guestLocation){
+//			do add_belief(finish_beer);
+			
+        	
+//        	do remove_belief();
+        	thirsty <- false;
+        	write thirsty;
+        	do remove_belief(drink_beer);
+        	do remove_intention(finish_beer, true); 
+		}
+		
+        
+//        do add_belief(new_predicate("not thirsty"));
+//		do remove_belief(order_beer);  
+//		do remove_desire(order_beer);  
+//		do remove_desire(find_bar);
     }
+    
+    
 
 	//point statusPoint <- nil;
 	
@@ -184,41 +223,41 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 //	}
 
 
-//	reflex getInfo when:!(empty(informs)){
-//		loop msg over: informs{
-//			Stage spot<- Stage(agent(msg.sender));
-//			if(msg.contents[0]="start"){
-//				add spot to:stage_list;
-//				if(flip(0.5)){
-//					dest<- spot;
-//					movingStatus <-1;
-//				}
-//
-//			}else if(msg.contents[0]="end"){
-//				remove spot from:stage_list;
-//				if(dest!=nil){
-//					if(dest=spot){
-//						dest<- stage_list[rnd(length(stage_list) - 1)];
-//						
-//						movingStatus <-1;
-//					}
-//				}
-//			}
-//		}
-//			
-//	}
-//	
-//	reflex goToStage when:movingStatus=1{
-//		do goto target:dest;
-//	}
-//	
-//	reflex nearStage when: dest!=nil and distance_to(self,dest)<=10 and movingStatus=1{
-//		movingStatus <- 2;
-//	}
-//	
-//	reflex atStage when: movingStatus=2{
-//		do wander;
-//	}
+	reflex getInfo when:!(empty(informs)){
+		loop msg over: informs{
+			Stage spot<- Stage(agent(msg.sender));
+			if(msg.contents[0]="start"){
+				add spot to:stage_list;
+				if(flip(0.05) and thirsty = false){
+					dest<- spot;
+					movingStatus <-1;
+				}
+
+			}else if(msg.contents[0]="end"){
+				remove spot from:stage_list;
+				if(dest!=nil){
+					if(dest=spot){
+						dest<- stage_list[rnd(length(stage_list) - 1)];
+						
+						movingStatus <-1;
+					}
+				}
+			}
+		}
+			
+	}
+	
+	reflex goToStage when:movingStatus=1{
+		do goto target:dest;
+	}
+	
+	reflex nearStage when: dest!=nil and distance_to(self,dest)<=10 and movingStatus=1{
+		movingStatus <- 2;
+	}
+	
+	reflex atStage when: movingStatus=2{
+		do wander;
+	}
 //	
 //	
 //	
@@ -233,32 +272,32 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 
 }
 
-species Bar skills:[fipa]{
-//	string type;
-	int startHH <- 1;
-	int endHH <- 0;
-	bool happyHour <- false;
-	string type <- "bar";
-	int beers <- rnd(1,20);
-
-	aspect default {
-		draw rectangle(4, 4) color: #yellow;
-	}
-	
-	reflex happyHour when: (time = startHH) and (happyHour = false) {
-		write name + " Happy hour is starting!";
-		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type]];
-		endHH <-int(time+200);
-		happyHour <- true;
-	}
-	
-	reflex endHappyHour when: (time = endHH) and (happyHour = true) {
-		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end', type] ];
-		write name + ' Happy hour has ended';
-		startHH <- int(time+30*rnd(2,3));
-		happyHour <- false;
-	}
-}
+//species Bar skills:[fipa]{
+////	string type;
+//	int startHH <- 1;
+//	int endHH <- 0;
+//	bool happyHour <- false;
+//	string type <- "bar";
+//	int beers <- rnd(1,20);
+//
+//	aspect default {
+//		draw rectangle(4, 4) color: #yellow;
+//	}
+//	
+//	reflex happyHour when: (time = startHH) and (happyHour = false) {
+//		write name + " Happy hour is starting!";
+//		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type]];
+//		endHH <-int(time+200);
+//		happyHour <- true;
+//	}
+//	
+//	reflex endHappyHour when: (time = endHH) and (happyHour = true) {
+//		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end', type] ];
+//		write name + ' Happy hour has ended';
+//		startHH <- int(time+30*rnd(2,3));
+//		happyHour <- false;
+//	}
+//}
 
 //species RaveParty skills:[fipa]{
 //	int startRP <- 1;
@@ -313,47 +352,18 @@ species Stage skills:[fipa]{
 		
 	}
 	
-//	init{
-//		if(type1="pop"){
-//			popMusic <- 0.9;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.0;
-//		}else if(type1="rock"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.9;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.0;
-//		}else if(type1="folks"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.9;
-//			jazzMusic <- 0.0;
-//		}else if(type1="jazz"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.9;
-//		}
-//	}
-//	
 	
-	reflex stageHostingConcert when: (time = whenToStart and ongoing=false)  {
+	reflex stageHostingConcert when: (time = whenToStart and ongoing=false and type!="bar")  {
 		
-//		if (flip(0.2)){
-//			betterLightShow <- rnd(0.0, 1.0);
-//	 		betterVisuals <- rnd(0.0, 1.0);
-//			goodSoundSystem <- rnd(0.0, 1.0);
-//			famous <- rnd (0.0, 1.0);
 			write name + ": "+type+" is starting soon";
 			do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start'] ];
 			whenToEnd <-int(time+20*rnd(10,20));
 			ongoing <- true;
-//		}
+
 		
 	}
 	
-	reflex endConcert when: (time=whenToEnd) and ongoing = true{
+	reflex endConcert when: (time=whenToEnd) and ongoing = true and type!="bar"{
 		
 		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
 		
@@ -370,7 +380,7 @@ experiment bdi type:gui{
 	output{
 		display map type: opengl {
 			species Guests;
-			species Bar;
+//			species Bar;
 
 			species Stage;
 			
