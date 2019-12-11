@@ -25,7 +25,7 @@ global {
 //		int addDist <- 0;
 		
 		point storeLocation1 <- {25, 25};
-		create Guests number: 50;
+		create Guests number: 70;
 //		{
 //			//location <- {50 + addDist, 50 + addDist};
 //			//addDist <- addDist + 5;
@@ -46,12 +46,6 @@ global {
 		}
 		
 
-
-//		
-		
-//		loop i from:0 to:3{
-//			create Stage number: 1 with:(stage_color:rgb(rnd(255),rnd(255),rnd(255)),type:);
-//		}
 		create Stage number: 2 with:(stage_color:#blue,type:"bar");
 		
 		create Stage number: 1 with:(stage_color:#yellow,type:"party");
@@ -60,9 +54,6 @@ global {
 	
 	}
 	
-//	action move (list<agent> movingGuest){
-//		
-//	}
 	
 }
 
@@ -140,11 +131,21 @@ species Guests skills:[moving, fipa]{
 	reflex getInfo when:!(empty(informs)){
 		loop msg over: informs{
 			Stage spot<- Stage(agent(msg.sender));
+			write msg.sender;
 			if(msg.contents[0]="start"){
 				add spot to:stage_list;
 				if(flip(0.5)){
-					dest<- spot;
-					movingStatus <-1;
+					write friend;
+					write spot.type;
+					if(friend != nil and spot.type="concert"){
+						write name + " sending invite to friend " + friend;
+						do start_conversation with: [to :: list(friend), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['invitation',spot] ];
+						dest<- spot;
+						movingStatus <-1;	
+					}else{
+						dest<- spot;
+						movingStatus <-1;
+					}
 				}
 
 			}else if(msg.contents[0]="end"){
@@ -156,6 +157,12 @@ species Guests skills:[moving, fipa]{
 						movingStatus <-1;
 					}
 				}
+			}else if (msg.contents[0]="invitation"){
+				spot<-msg.contents[1];
+				add spot to:stage_list;							
+				dest<- spot;
+				movingStatus <-1;
+				write name +" going to concert with friend " + friend;
 			}
 		}
 			
@@ -163,6 +170,13 @@ species Guests skills:[moving, fipa]{
 	
 	reflex goToStage when:movingStatus=1{
 		do goto target:dest;
+		if(friend != nil){
+			ask friend {
+				write name + "is no longer friend with " + friend;
+				myself.friend <- nil;
+				self.friend <- nil;
+			}
+		}
 	}
 	
 	reflex nearStage when: dest!=nil and distance_to(self,dest)<=7 and movingStatus=1{
@@ -178,7 +192,7 @@ species Guests skills:[moving, fipa]{
 			ask Guests at_distance 3{
 					if(self.gType="drunk"){
 						if(flip(0.9)){
-							write myself.name +":drunk guy make friends with "+self.name+":drunk guy";
+//							write myself.name +":drunk guy make friends with "+self.name+":drunk guy";
 							myself.friend<- self;
 							self.friend<- myself;
 //							myself.happy<-myself.happy+0.1;
@@ -186,13 +200,17 @@ species Guests skills:[moving, fipa]{
 						}
 					}else if(self.gType="journalist"){
 						if(flip(0.3)){
-							write myself.name +":drunk guy interview with "+self.name+":journalist, jouranlist get angry and drunk guy get happy";
+							myself.friend<- self;
+							self.friend<- myself;
+//							write myself.name +":drunk guy interview with "+self.name+":journalist, jouranlist get angry and drunk guy get happy";
 //							self.angry <- self.angry+0.1;
 //							myself.happy<-myself.happy+0.1;
 						}
 					}else{
 						if(self.happy>=0.5){
-							write myself.name + ":drunk guy meet "+ self.gType+" ";
+							myself.friend<- self;
+							self.friend<- myself;
+//							write myself.name + ":drunk guy meet "+ self.gType+" ";
 						}
 						
 					}
@@ -252,7 +270,6 @@ species Guests skills:[moving, fipa]{
 			
 			
 		}else if(gType="journalist"){
-//			draw circle(2) color:#blue;
 			ask Guests at_distance 3{
 				if(self.gType!="tired"){
 					if(flip(0.3) and sleepy<=0.7){
@@ -273,21 +290,20 @@ species Guests skills:[moving, fipa]{
 	reflex withFriend when: movingStatus=2 and friend!=nil{
 		
 		if(gType="drunk"){
-			if(friend.gType="chill"){
-				if(flip(0.2)){
-					if(generous > 0.25){
+			if(friend.gType="party" or friend.gType="chill"){
+					if(generous > 0.25 and angry < 0.5){
 						write gType + " is feeling generous and buys " + friend.gType + " a drink";
-						self.happy <- self.happy+0.4;
-						self.angry <- self.angry-0.3;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.2;
 						self.generous <- self.generous+0.2;
 						self.sleepy <- self.sleepy+0.1;
-						friend.happy <- friend.happy+0.4;
-						friend.angry <- friend.angry-0.3;
+						friend.happy <- friend.happy+0.1;
+						friend.angry <- friend.angry-0.2;
 						friend.generous <- friend.generous+0.2;
 						friend.sleepy <- friend.sleepy+0.1;
 						count <- "generous";
 					}
-					else if(angry > 0.2){
+					else if(angry > 0.2 and generous < 0.2){
 						write gType + " is feeling angry when he meets " + friend.gType;
 						self.happy <- self.happy-0.3;
 						self.angry <- self.angry+0.3;
@@ -300,138 +316,195 @@ species Guests skills:[moving, fipa]{
 					}
 					else if(happy > 0.2){
 						write gType + " is feeling happy and chats with " + friend.gType;
-						self.happy <- self.happy+0.5;
+						self.happy <- self.happy+0.2;
 						self.angry <- self.angry-0.3;
 						self.generous <- self.generous+0.1;
 						self.sleepy <- self.sleepy-0.2;
-						friend.happy <- friend.happy+0.5;
+						friend.happy <- friend.happy+0.1;
 						friend.angry <- friend.angry-0.3;
 						friend.generous <- friend.generous+0.1;
 						self.sleepy <- self.sleepy-0.2;
 						count <- "happy";
 					}
-				}
 			}
 		}else if(gType="party"){
-			if(friend.gType="journalist"){
-				if(flip(0.2)){
-					if(angry > 0.25){
-						write gType + " is angry and does not want to be interviewed by " + friend.gType;
-						self.angry <- self.angry+0.3;
+//			if(friend.gType){
+					if(angry > 0.2 and happy < 0.2 and sleepy < 0.5){
+						write gType + " is angry and does not want to hangout with his friend " + friend.gType;
+						self.angry <- self.angry+0.2;
 						self.happy <- self.happy-0.2;
 						self.generous <- self.generous-0.2;
-						friend.angry <- friend.angry+0.3;
+						self.sleepy <- self.sleepy+0.1;
+						friend.angry <- friend.angry+0.2;
 						friend.happy <- friend.happy-0.2;
 						friend.generous <- friend.generous-0.2;	
+						friend.sleepy <- friend.sleepy+0.1;
 					} 
-					else if(happy > 0.25) {
-						write gType + " is feeling happy and is willing to answer questions from the " + friend.gType;
+					else if(happy > 0.2 and sleepy < 0.5) {
+						write gType + " is happy with his friend " + friend.gType;
 						self.angry <- self.angry-0.3;
 						self.happy <- self.happy+0.2;
 						self.generous <- self.generous+0.2;
+						self.sleepy <- self.sleepy-0.1;
 						friend.angry <- friend.angry-0.3;
 						friend.happy <- friend.happy+0.2;
 						friend.generous <- friend.generous+0.2;
+						friend.sleepy <- friend.sleepy-0.1;
 						count <- "happy";
 						
 					} 
-					else if(sleepy > 0.4){
-						write gType + " is feeling sleepy and answers a few questions from the " + friend.gType;
-						self.happy <- self.happy+0.2;
-						self.angry <- self.angry-0.1;
+					else if(sleepy > 0.5){
+						write gType + " is feeling sleepy and says goodbye to his friend " + friend.gType;
+						self.happy <- self.happy-0.1;
+						self.angry <- self.angry+0.1;
 						self.generous <- self.generous+0.1;
 						self.sleepy <- self.sleepy+0.2;
-						friend.happy <- friend.happy+0.2;
-						friend.angry <- friend.angry-0.1;
-						friend.generous <- friend.generous+0.1;
-						friend.sleepy <- friend.sleepy+0.2;
+						friend.happy <- friend.happy-0.1;
+						friend.angry <- friend.angry+0.1;
+						friend.generous <- friend.generous-0.1;
+						friend.sleepy <- friend.sleepy-0.1;
+//						do die();
+//			}
 					}
-				}
-			}
 		}else if(gType="chill"){
 			if(friend.gType="journalist"){
-				if(flip(0.2)){
-					if(happy > 0.15){
+				if(sleepy > 0.3){
+					write gType + " is feeling too tired to be interviewd by " + friend.gType;
+					self.happy <- self.happy-0.2;
+					self.angry <- self.angry-0.3;
+					self.generous <- self.generous-0.1;
+					self.sleepy <- self.sleepy+0.3;
+					friend.happy <- friend.happy-0.2;
+					friend.angry <- friend.angry+0.3;
+					friend.generous <- friend.generous-0.1;
+					friend.sleepy <- friend.sleepy-0.1;
+						if(happy > 0.15 and angry < 0.2 and generous < 0.2){
 						write gType + " is feeling happy and is interviewed by " + friend.gType;
-						self.happy <- self.happy+0.5;
+						self.happy <- self.happy+0.2;
 						self.angry <- self.angry-0.3;
 						self.generous <- self.generous+0.1;
-						friend.happy <- friend.happy+0.5;
+						self.sleepy <- self.sleepy-0.1;
+						friend.happy <- friend.happy+0.2;
 						friend.angry <- friend.angry-0.3;
 						friend.generous <- friend.generous+0.1;
+						friend.sleepy <- friend.sleepy-0.1;
+						count <- "happy";
+						}
+						else if(angry > 0.2 and generous < 0.2){
+							write gType + " is feeling angry and does not want to be interviewed by " + friend.gType;
+							self.happy <- self.happy-0.2;
+							self.angry <- self.angry+0.2;
+							self.generous <- self.generous-0.1;
+							self.sleepy <- self.sleepy+0.1;
+							friend.happy <- friend.happy-0.2;
+							friend.angry <- friend.angry+0.3;
+							friend.generous <- friend.generous-0.1;
+							friend.sleepy <- friend.sleepy+0.1;
+						}
+						else if(generous > 0.2){
+							write gType + " is feeling generous and is interviewed by " + friend.gType;
+							self.happy <- self.happy+0.2;
+							self.angry <- self.angry-0.2;
+							self.generous <- self.generous+0.3;
+							self.sleepy <- self.sleepy-0.1;
+							friend.happy <- friend.happy+0.2;
+							friend.angry <- friend.angry-0.3;
+							friend.generous <- friend.generous+0.1;
+							friend.sleepy <- friend.sleepy-0.1;
+						
+						}
+				}
+			}else if(friend.gType="party" or friend.gType="drunk"){
+					if(happy > 0.15 and angry < 0.2 and generous < 0.2){
+						write gType + " is feeling happy and chills with " + friend.gType;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.3;
+						self.generous <- self.generous+0.1;
+						self.sleepy <- self.sleepy-0.1;
+						friend.happy <- friend.happy+0.1;
+						friend.angry <- friend.angry-0.3;
+						friend.generous <- friend.generous+0.1;
+						friend.sleepy <- friend.sleepy-0.1;
 						count <- "happy";
 					}
-					else if(angry > 0.4){
-						write gType + " is feeling angry and does not want to be interviewed by " + friend.gType;
+					else if(angry > 0.2 and generous < 0.2){
+						write gType + " is feeling angry and does not want to chill with " + friend.gType;
 						self.happy <- self.happy-0.2;
 						self.angry <- self.angry+0.2;
 						self.generous <- self.generous-0.1;
+						self.sleepy <- self.sleepy+0.1;
 						friend.happy <- friend.happy-0.2;
 						friend.angry <- friend.angry+0.3;
 						friend.generous <- friend.generous-0.1;
+						friend.sleepy <- friend.sleepy+0.1;
 					}
 					else if(generous > 0.2){
-						write gType + " is feeling generous and is interviewed by " + friend.gType;
+						write gType + " is feeling generous and gives " + friend.gType + " a hug";
 						self.happy <- self.happy+0.2;
 						self.angry <- self.angry-0.2;
 						self.generous <- self.generous+0.3;
+						self.sleepy <- self.sleepy-0.1;
 						friend.happy <- friend.happy+0.2;
-						friend.angry <- friend.angry-0.3;
+						friend.angry <- friend.angry-0.2;
 						friend.generous <- friend.generous+0.1;
+						friend.sleepy <- friend.sleepy-0.1;
 						count <- "generous";
 					}
-				}
 			}
 			
 		}else if(gType="tired"){
 			if(friend.gType="tired"){
-				if(flip(0.2)){
-					if(sleepy < 0.25 and happy > 0.15){
+					if(sleepy < 0.25 and happy > 0.15 and angry < 0.2){
 						write gType + " is hanging out with another " + friend.gType;
-						self.sleepy <- self.sleepy+0.2;
+						self.sleepy <- self.sleepy+0.4;
 						self.happy <- self.happy+0.1;
 						self.angry <- self.angry-0.1;
-						friend.sleepy <- friend.sleepy+0.2;
+						self.generous <- self.generous+0.1;
+						friend.sleepy <- friend.sleepy+0.4;
 						friend.happy <- friend.happy+0.1;
 						friend.angry <- friend.angry-0.1;
+						friend.generous <- friend.generous+0.1;
 						count <- "happy";
 					}
-					else if(angry > 0.25){
+					else if(angry > 0.2){
 						write gType + " is angry and unfriends " + friend.gType;
-						self.sleepy <- self.sleepy+0.1;
-						self.happy <- self.happy-0.1;
-						self.angry <- self.angry+0.1;
-						friend.sleepy <- friend.sleepy+0.1;
-						friend.happy <- friend.happy-0.1;
-						friend.angry <- friend.angry+0.1;
+						self.sleepy <- self.sleepy+0.5;
+						self.happy <- self.happy-0.4;
+						self.angry <- self.angry+0.4;
+						self.generous <- self.generous-0.1;
+						friend.sleepy <- friend.sleepy+0.5;
+						friend.happy <- friend.happy-0.4;
+						friend.angry <- friend.angry+0.4;
+						friend.generous <- friend.generous-0.1;
 						friend <- nil;
 					}
-				}
 			}
 			
 		}else if(gType="journalist"){
 			if(friend.gType="tired"){
-				if(flip(0.2)){
 					if(happy > 0.15 and sleepy < 0.2){
 						write gType + " takes an interview with " + friend.gType;
 						self.sleepy <- self.sleepy+0.3;
 						self.happy <- self.happy+0.2;
 						self.angry <- self.angry-0.15;
+						self.generous <- self.generous+0.1;
 						friend.sleepy <- self.sleepy+0.3;
 						friend.happy <- friend.happy+0.2;
 						friend.angry <- friend.angry-0.15;
+						friend.generous <- friend.generous+0.1;
 						count <- "happy";
 					}
-					else if(angry > 0.3 and friend.sleepy > 0.4){
+					else if(angry > 0.2 and friend.sleepy > 0.3){
 						write gType + " is too angry to interview such a sleepy person " + friend.gType;
 						self.sleepy <- self.sleepy+0.1;
 						self.happy <- self.happy-0.2;
 						self.angry <- self.angry+0.2;
+						self.generous <- self.generous-0.1;
 						friend.sleepy <- self.sleepy+0.1;
 						friend.happy <- friend.happy-0.2;
 						friend.angry <- friend.angry+0.2;
+						friend.generous <- friend.generous-0.1;
 					}
-				}
 			}
 			
 		}
