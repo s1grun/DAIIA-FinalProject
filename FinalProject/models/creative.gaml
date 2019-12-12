@@ -5,7 +5,7 @@
 * Tags: Tag1, Tag2, TagN
 ***/
 
-model Festival
+model creative
 
 /* Insert your model definition here */
 global {
@@ -18,6 +18,7 @@ global {
     list<Guests> chillList <-[];
     list<Guests> drunkList <-[];
     list<Guests> journalistList <-[];
+    float globalAngry <- 0.0;
     
 	init {
 		
@@ -25,7 +26,7 @@ global {
 //		int addDist <- 0;
 		
 		point storeLocation1 <- {25, 25};
-		create Guests number: 70;
+		create Guests number: 50;
 //		{
 //			//location <- {50 + addDist, 50 + addDist};
 //			//addDist <- addDist + 5;
@@ -46,11 +47,11 @@ global {
 		}
 		
 
-		create Venue number: 2 with:(stage_color:#blue,type:"bar");
+		create Stage number: 2 with:(stage_color:#blue,type:"bar");
 		
-		create Venue number: 1 with:(stage_color:#yellow,type:"party");
+		create Stage number: 1 with:(stage_color:#yellow,type:"party");
 		
-		create Venue number: 1 with:(stage_color:#green,type:"concert");
+		create Stage number: 1 with:(stage_color:#green,type:"concert");
 	
 	}
 	
@@ -83,7 +84,7 @@ species Guests skills:[moving, fipa]{
 	int status <- 0;
 	rgb my_color <- #blue;
 	string gType <- guestTypes[rnd(length(guestTypes) - 1)];
-	Venue dest <-nil;
+	Stage dest <-nil;
 	list stage_list<-[];
 	int movingStatus <- 0; // 0-> do wander,1-> go to stage,2-> at stage;
 	int interaction <-0; //0->no interaction, 1->interact with someone.
@@ -129,8 +130,9 @@ species Guests skills:[moving, fipa]{
 
 
 	reflex getInfo when:!(empty(informs)){
+		write "Global Angry value: " + globalAngry;
 		loop msg over: informs{
-			Venue spot<- Venue(agent(msg.sender));
+			Stage spot<- Stage(agent(msg.sender));
 			write msg.sender;
 			if(msg.contents[0]="start"){
 				add spot to:stage_list;
@@ -152,9 +154,15 @@ species Guests skills:[moving, fipa]{
 				remove spot from:stage_list;
 				if(dest!=nil){
 					if(dest=spot){
-						dest<- stage_list[rnd(length(stage_list) - 1)];
+						if(length(stage_list) = 0){
+							do wander;
+						}else{
+							dest<- stage_list[rnd(length(stage_list) - 1)];
+						}
+						
 						
 						movingStatus <-1;
+						remove self from: dest.guestsList;
 					}
 				}
 			}else if (msg.contents[0]="invitation"){
@@ -181,6 +189,7 @@ species Guests skills:[moving, fipa]{
 	
 	reflex nearStage when: dest!=nil and distance_to(self,dest)<=7 and movingStatus=1{
 		movingStatus <- 2;
+		dest.guestsList <+ self;		
 	}
 	
 	
@@ -508,7 +517,7 @@ species Guests skills:[moving, fipa]{
 			}
 			
 		}
-		
+//		globalAngry <- globalAngry+self.angry+friend.angry;
 	}
 	
 	
@@ -516,84 +525,18 @@ species Guests skills:[moving, fipa]{
 	
 	
 
-	
-//	reflex inOriginal_location when: movingStatus =3 and location=original_location{
-//		 movingStatus <-0;
-//	}
 
 
 }
 
-//species Bar skills:[fipa]{
-////	string type;
-//	int startHH <- 1;
-//	int endHH <- 0;
-//	bool happyHour <- false;
-//	string type <- "bar";
-//
-//	aspect default {
-//		draw rectangle(4, 4) color: #yellow;
-//	}
-//	
-//	reflex happyHour when: (time = startHH) and (happyHour = false) {
-//		write name + " Happy hour is starting!";
-//		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start', type]];
-//		endHH <-int(time+200);
-//		happyHour <- true;
-//	}
-//	
-//	reflex endHappyHour when: (time = endHH) and (happyHour = true) {
-//		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end', type] ];
-//		write name + ' Happy hour has ended';
-//		startHH <- int(time+30*rnd(2,3));
-//		happyHour <- false;
-//	}
-//}
-//
-//species RaveParty skills:[fipa]{
-//	int startRP <- 1;
-//	int endRP <- 0;
-//	bool raveParty <- false;
-//	string type <- "party";
-//	
-//	aspect default {
-//		draw rectangle(4, 4) color: #black;
-//	}
-//	
-//	reflex ravePart when: (time = startRP) and (raveParty = false) {
-//		write name + " Rave Party is starting";
-//		do start_conversation with: [to :: list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['start']];
-//		endRP <-int(time+10*rnd(10,20));
-//		raveParty <- true;
-//	}
-//	
-//	reflex endHappyHour when: (time = endRP) and (raveParty = true) {
-//		do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
-//		write name + ' Happy hour has ended';
-//		endRP <- int(time+10*rnd(1,5));
-//		raveParty <- false;
-//	}
-//}
 
-
-
-
-species Venue skills:[fipa]{
-//	float betterLightShow <- rnd(0.0, 1.0);
-//	float betterVisuals <- rnd(0.0, 1.0);
-//	float goodSoundSystem <- rnd(0.0, 1.0);
-//	float famous <- rnd (0.0, 1.0);
-//	float popMusic <- rnd(0.0, 1.0);
-//	float rockMusic <- rnd(0.0, 1.0);
-//	float folksMusic <- rnd(0.0, 1.0);
-//	float jazzMusic <- rnd(0.0, 1.0); 
-//	string type1;
+species Stage skills:[fipa]{
 	int whenToStart<-1;
 	int whenToEnd<-0;
-//	list guestsList;
+	list<Guests> guestsList;
 	bool ongoing <- false;
 	string type;
-	
+	Guests guest;
 	rgb stage_color;
 	
 	aspect { 
@@ -603,38 +546,9 @@ species Venue skills:[fipa]{
 		
 	}
 	
-//	init{
-//		if(type1="pop"){
-//			popMusic <- 0.9;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.0;
-//		}else if(type1="rock"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.9;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.0;
-//		}else if(type1="folks"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.9;
-//			jazzMusic <- 0.0;
-//		}else if(type1="jazz"){
-//			popMusic <- 0.0;
-//			rockMusic <- 0.0;
-//			folksMusic <- 0.0;
-//			jazzMusic <- 0.9;
-//		}
-//	}
-//	
 	
 	reflex stageHostingConcert when: (time = whenToStart and ongoing=false)  {
 		
-//		if (flip(0.2)){
-//			betterLightShow <- rnd(0.0, 1.0);
-//	 		betterVisuals <- rnd(0.0, 1.0);
-//			goodSoundSystem <- rnd(0.0, 1.0);
-//			famous <- rnd (0.0, 1.0);
 			write name + ": "+type+" is starting soon";
 			if(type="concert"){
 				string concert_type<- genre[rnd(length(genre)-1)];
@@ -645,8 +559,27 @@ species Venue skills:[fipa]{
 			}
 			whenToEnd <-int(time+20*rnd(10,20));
 			ongoing <- true;
-//		}
 		
+	}
+	
+	reflex calculateGlobalAngryLevel when: (ongoing = true) {
+		globalAngry<-0.0;
+		if(type="concert" or type="party" or type="bar"){
+			loop g over: guestsList {
+				globalAngry <- globalAngry + g.angry;
+//				write "Guest angry value at concert" +g.angry;
+				
+			}
+			if(globalAngry >= 1.0){
+					color<-#darkred;
+					write "The angry level is too high, concert ends now" + globalAngry;
+					do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
+					write name + 'end '+ type;
+					whenToStart <- int(time+10*rnd(1,5));
+					ongoing <- false; 
+					color<-#blue;
+				}
+		}
 	}
 	
 	reflex endConcert when: (time=whenToEnd) and ongoing = true{
@@ -662,13 +595,13 @@ species Venue skills:[fipa]{
 	
 }
 
-experiment festival type:gui{
+experiment creative type:gui{
 	output{
 		display map type: opengl {
 			species Guests;
 //			species Bar;
 
-			species Venue;
+			species Stage;
 			
 			//graphics "env" {
         	//	draw cube(environment_size) color: #black empty: true;
