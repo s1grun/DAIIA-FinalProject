@@ -92,6 +92,30 @@ species Guests skills:[moving, fipa]{
 		}
 		
 	}
+	
+	reflex reset {
+		if(happy>2){
+			happy<- 1.0;
+		}else if(happy < 0){
+			happy<- 0.3;
+		}
+		
+		if(sleepy >2 ){
+			sleepy<- 1.0;
+		}else if(sleepy < -1 ){
+			sleepy<- 0.3;
+		}
+		if(angry > 2){
+			angry<- 1.0;
+		}else if(angry < -1){
+			angry<- 0.3;
+		}
+		if(generous > 2){
+			generous<- 1.0;
+		}else if(generous < -1){
+			generous<- 0.3;
+		}
+	}
 
 
 //In this reflex method we receive all inform fipa message and handle them depending on the content
@@ -259,7 +283,18 @@ species Guests skills:[moving, fipa]{
 			
 		
 		if(myself.gType="drunk"){//When a drunk guest meets a friend and depending how he's feeling and on the type of guest his friend is. 
-			if(self.gType="party" or self.gType="chill"){
+			if(myself.dest.type="concert"){
+				myself.sleepy <- myself.sleepy+0.5;
+				myself.happy <- myself.happy-0.4;
+				myself.angry <- myself.angry+0.1;
+				myself.generous <- myself.generous-0.1;
+				self.sleepy <- self.sleepy+0.1;
+				self.happy <- self.happy-0.2;
+				self.angry <- self.angry+0.2;
+				self.generous <- self.generous-0.1;
+				myself.friend <- nil;
+			}else{
+				if(self.gType="party" or self.gType="chill"){
 					if(myself.generous > 0.25 and myself.angry < 0.5){
 						write myself.gType + " is feeling generous and buys " + self.gType + " a drink";
 						if(self.happy >= 0.2 and self.angry < 0.2){
@@ -307,143 +342,19 @@ species Guests skills:[moving, fipa]{
 						self.generous <- self.generous+0.1;
 						self.sleepy <- self.sleepy-0.2;
 					}
-			}
-		}else if(myself.gType="party"){
-//			if(friend.gType){
-					if(myself.angry > 0.2 and myself.happy < 0.2 and myself.sleepy < 0.5){
-						write myself.gType + " is angry and does not want to hangout with his friend " + self.gType;
-						myself.angry <- myself.angry+0.2;
-						myself.happy <- myself.happy-0.2;
-						myself.generous <- myself.generous-0.2;
-						myself.sleepy <- myself.sleepy+0.1;
-						self.angry <- self.angry+0.2;
-						self.happy <- self.happy-0.2;
-						self.generous <- self.generous-0.2;	
-						self.sleepy <- self.sleepy+0.1; 
-					} 
-					else if(myself.happy > 0.2 and myself.sleepy < 0.5) {
-						write myself.gType + " is happy with his friend " + self.gType;
-						myself.angry <- myself.angry-0.3;
-						myself.happy <- myself.happy+0.2;
-						myself.generous <- myself.generous+0.2;
-						myself.sleepy <- myself.sleepy-0.1;
-						self.angry <- self.angry-0.3;
-						self.happy <- self.happy+0.2;
-						self.generous <- self.generous+0.2;
-						self.sleepy <- self.sleepy-0.1;
-						
-					} 
-					else if(myself.sleepy > 0.5){
-						write myself.gType + " is feeling sleepy and says goodbye to his friend " + self.gType;
-						myself.happy <- myself.happy-0.1;
-						myself.angry <- myself.angry+0.1;
-						myself.generous <- myself.generous+0.1;
-						myself.sleepy <- myself.sleepy+0.2;
-						self.happy <- self.happy-0.1;
-						self.angry <- self.angry+0.1;
-						self.generous <- self.generous-0.1;
-						self.sleepy <- self.sleepy-0.1;
-						myself.friend <- nil;
-						do wander; 
-					}
-		}else if(myself.gType="chill"){
-			if(self.gType="journalist"){
-					if(myself.sleepy > 0.3){
-						write myself.gType + " is feeling too tired to be interviewd by " + self.gType;
-						myself.happy <- myself.happy-0.2;
-						myself.angry <- myself.angry-0.3;
-						myself.generous <- myself.generous-0.1;
-						myself.sleepy <- myself.sleepy+0.3;
-						self.happy <- self.happy-0.2;
-						self.angry <- self.angry+0.3;
-						self.generous <- self.generous-0.1;
-						self.sleepy <- self.sleepy-0.1;
-					}
-					if(myself.happy > 0.15 and myself.angry < 0.2 and myself.generous < 0.2){
-						write myself.gType + " is feeling happy and is interviewed by " + self.gType;
-						myself.happy <- myself.happy+0.2;
-						myself.angry <- myself.angry-0.3;
-						myself.generous <- myself.generous+0.1;
-						myself.sleepy <- myself.sleepy-0.1;
-						self.happy <- self.happy+0.2;
-						self.angry <- self.angry-0.3;
-						self.generous <- self.generous+0.1;
-						self.sleepy <- self.sleepy-0.1;
-					}
-					else if(myself.angry > 0.2 and myself.generous < 0.2){
-							write myself.gType + " is feeling angry and does not want to be interviewed by " + self.gType;
-							myself.happy <- myself.happy-0.2;
-							myself.angry <- myself.angry+0.2;
-							myself.generous <- myself.generous-0.1;
-							myself.sleepy <- myself.sleepy+0.1;
-							self.happy <- self.happy-0.2;
-							self.angry <- self.angry+0.3;
-							self.generous <- self.generous-0.1;
-							self.sleepy <- self.sleepy+0.1;
-						}
-					else if(myself.generous > 0.2){
-							write myself.gType + " is feeling generous and is interviewed by " + self.gType;
-							myself.happy <- myself.happy+0.2;
-							myself.angry <- myself.angry-0.2;
-							myself.generous <- myself.generous+0.3;
-							myself.sleepy <- myself.sleepy-0.1;
-							self.happy <- self.happy+0.2;
-							self.angry <- self.angry-0.3;
-							self.generous <- self.generous+0.1;
-							self.sleepy <- self.sleepy-0.1;
-						
-						}
-				}else if(self.gType="party" or self.gType="drunk"){
-					if(myself.happy > 0.15 and myself.angry < 0.2 and myself.generous < 0.2){
-						write myself.gType + " is feeling happy and chills with " + self.gType;
-						myself.happy <- myself.happy+0.2;
-						myself.angry <- myself.angry-0.3;
-						myself.generous <- myself.generous+0.1;
-						myself.sleepy <- myself.sleepy-0.1;
-						self.happy <- self.happy+0.1;
-						self.angry <- self.angry-0.3;
-						self.generous <- self.generous+0.1;
-						self.sleepy <- self.sleepy-0.1;
-					}
-					else if(myself.angry > 0.2 and myself.generous < 0.2){
-						write myself.gType + " is feeling angry and does not want to chill with " + self.gType;
-						myself.happy <- myself.happy-0.2;
-						myself.angry <- myself.angry+0.2;
-						myself.generous <- myself.generous-0.1;
-						myself.sleepy <- myself.sleepy+0.1;
-						self.happy <- self.happy-0.2;
-						self.angry <- self.angry+0.3;
-						self.generous <- self.generous-0.1;
-						self.sleepy <- self.sleepy+0.1;
-					}
-					else if(myself.generous > 0.2){
-						write myself.gType + " is feeling generous and gives " + self.gType + " a hug";
-						myself.happy <- myself.happy+0.2;
-						myself.angry <- myself.angry-0.2;
-						myself.generous <- myself.generous+0.3;
-						myself.sleepy <- myself.sleepy-0.1;
-						self.happy <- self.happy+0.2;
-						self.angry <- self.angry-0.2;
-						self.generous <- self.generous+0.1;
-						self.sleepy <- self.sleepy-0.1;
-					}
-					
-					}
-			
-		}else if(myself.gType="tired"){
-			if(self.gType="tired"){
-					if(myself.sleepy < 0.25 and myself.happy > 0.15 and myself.angry < 0.2){
+			}else if(self.gType="tired"){
+				if(myself.sleepy < 0.7 and myself.happy > 0.3){
 						write myself.gType + " is hanging out with another " + self.gType;
 						myself.sleepy <- myself.sleepy+0.4;
-						myself.happy <- myself.happy+0.1;
-						myself.angry <- myself.angry-0.1;
+						myself.happy <- myself.happy+0.3;
+						myself.angry <- myself.angry-0.3;
 						myself.generous <- myself.generous+0.1;
 						self.sleepy <- self.sleepy+0.4;
-						self.happy <- self.happy+0.1;
-						self.angry <- self.angry-0.1;
+						self.happy <- self.happy+0.3;
+						self.angry <- self.angry-0.3;
 						self.generous <- self.generous+0.1;
 					}
-					else if(myself.angry > 0.2){
+					else if(self.sleepy >= 0.7){
 						write myself.gType + " is angry and unfriends " + self.gType;
 						myself.sleepy <- myself.sleepy+0.5;
 						myself.happy <- myself.happy-0.4;
@@ -456,10 +367,234 @@ species Guests skills:[moving, fipa]{
 						myself.friend <- nil;
 					}
 			}
+			}
+			
+		}else if(myself.gType="party"){
+//			if(friend.gType){
+			if(myself.dest.type="party"){
+				if(myself.sleepy<0.9 and self.sleepy<0.5){
+					write myself.gType + " is happy with his friend " + self.gType+" at party";
+					myself.angry <- myself.angry-0.3;
+					myself.happy <- myself.happy+0.2;
+					myself.generous <- myself.generous+0.2;
+					myself.sleepy <- myself.sleepy-0.1;
+					self.angry <- self.angry-0.3;
+					self.happy <- self.happy+0.2;
+					self.generous <- self.generous+0.2;
+					self.sleepy <- self.sleepy-0.1;
+				}else{
+					write myself.gType + " is feeling sleepy and says goodbye to his friend " + self.gType;
+					myself.happy <- myself.happy-0.1;
+					myself.angry <- myself.angry+0.1;
+					myself.generous <- myself.generous-0.1;
+					myself.sleepy <- myself.sleepy+0.2;
+					self.happy <- self.happy-0.1;
+					self.angry <- self.angry+0.1;
+					self.generous <- self.generous-0.1;
+					self.sleepy <- self.sleepy+0.1;
+					myself.friend <- nil;
+					do wander; 
+				}
+				
+			}else{
+				if(myself.angry > 0.2 and myself.happy < 0.2 and myself.sleepy < 0.5){
+					write myself.gType + " is angry and does not want to hangout with his friend " + self.gType;
+					myself.angry <- myself.angry+0.2;
+					myself.happy <- myself.happy-0.2;
+					myself.generous <- myself.generous-0.2;
+					myself.sleepy <- myself.sleepy+0.1;
+					self.angry <- self.angry+0.2;
+					self.happy <- self.happy-0.2;
+					self.generous <- self.generous-0.2;	
+					self.sleepy <- self.sleepy+0.1; 
+				} 
+				else if(myself.happy > 0.2 and myself.sleepy < 0.5) {
+					write myself.gType + " is happy with his friend " + self.gType;
+					myself.angry <- myself.angry-0.3;
+					myself.happy <- myself.happy+0.2;
+					myself.generous <- myself.generous+0.2;
+					myself.sleepy <- myself.sleepy-0.1;
+					self.angry <- self.angry-0.3;
+					self.happy <- self.happy+0.2;
+					self.generous <- self.generous+0.2;
+					self.sleepy <- self.sleepy-0.1;
+					
+				} 
+				else if(myself.sleepy > 0.5){
+					write myself.gType + " is feeling sleepy and says goodbye to his friend " + self.gType;
+					myself.happy <- myself.happy-0.1;
+					myself.angry <- myself.angry+0.1;
+					myself.generous <- myself.generous+0.1;
+					myself.sleepy <- myself.sleepy+0.2;
+					self.happy <- self.happy-0.1;
+					self.angry <- self.angry+0.1;
+					self.generous <- self.generous-0.1;
+					self.sleepy <- self.sleepy-0.1;
+					myself.friend <- nil;
+					do wander; 
+				}
+			}
+				
+		}else if(myself.gType="chill"){
+			if(self.gType="journalist"){
+					if(myself.sleepy > 0.5){
+						write myself.gType + " is feeling too tired to be interviewd by " + self.gType;
+						myself.happy <- myself.happy-0.2;
+						myself.angry <- myself.angry-0.3;
+						myself.generous <- myself.generous-0.1;
+						myself.sleepy <- myself.sleepy+0.3;
+						self.happy <- self.happy-0.2;
+						self.angry <- self.angry+0.3;
+						self.generous <- self.generous-0.1;
+						self.sleepy <- self.sleepy-0.1;
+					}
+					else if(myself.happy > 0.5 and myself.generous < 0.5){
+						write myself.gType + " is feeling happy and is interviewed by " + self.gType;
+						myself.happy <- myself.happy+0.2;
+						myself.angry <- myself.angry-0.3;
+						myself.generous <- myself.generous+0.1;
+						myself.sleepy <- myself.sleepy-0.1;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.3;
+						self.generous <- self.generous+0.1;
+						self.sleepy <- self.sleepy-0.1;
+					}
+					else if(myself.angry > 0.7 and myself.generous < 0.2){
+							write myself.gType + " is feeling angry and does not want to be interviewed by " + self.gType;
+							myself.happy <- myself.happy-0.2;
+							myself.angry <- myself.angry+0.2;
+							myself.generous <- myself.generous-0.1;
+							myself.sleepy <- myself.sleepy+0.1;
+							self.happy <- self.happy-0.2;
+							self.angry <- self.angry+0.3;
+							self.generous <- self.generous-0.1;
+							self.sleepy <- self.sleepy+0.1;
+						}
+					else if(myself.generous > 0.5){
+							write myself.gType + " is feeling generous and is interviewed by " + self.gType;
+							myself.happy <- myself.happy+0.2;
+							myself.angry <- myself.angry-0.2;
+							myself.generous <- myself.generous+0.3;
+							myself.sleepy <- myself.sleepy-0.1;
+							self.happy <- self.happy+0.2;
+							self.angry <- self.angry-0.3;
+							self.generous <- self.generous+0.1;
+							self.sleepy <- self.sleepy-0.1;
+						
+						}
+				}else if(self.gType="party" or self.gType="drunk"){
+					if(myself.happy > 0.5 and myself.angry < 0.7 and myself.generous < 0.5){
+						write myself.gType + " is feeling happy and chills with " + self.gType;
+						myself.happy <- myself.happy+0.2;
+						myself.angry <- myself.angry-0.3;
+						myself.generous <- myself.generous+0.1;
+						myself.sleepy <- myself.sleepy-0.1;
+						self.happy <- self.happy+0.1;
+						self.angry <- self.angry-0.3;
+						self.generous <- self.generous+0.1;
+						self.sleepy <- self.sleepy-0.1;
+					}
+					else if(myself.angry > 0.7 and myself.generous < 0.5){
+						write myself.gType + " is feeling angry and does not want to chill with " + self.gType;
+						myself.happy <- myself.happy-0.2;
+						myself.angry <- myself.angry+0.2;
+						myself.generous <- myself.generous-0.1;
+						myself.sleepy <- myself.sleepy+0.1;
+						self.happy <- self.happy-0.2;
+						self.angry <- self.angry+0.3;
+						self.generous <- self.generous-0.1;
+						self.sleepy <- self.sleepy+0.1;
+					}
+					else if(myself.generous > 0.5){
+						write myself.gType + " is feeling generous and gives " + self.gType + " a hug";
+						myself.happy <- myself.happy+0.2;
+						myself.angry <- myself.angry-0.2;
+						myself.generous <- myself.generous+0.3;
+						myself.sleepy <- myself.sleepy-0.1;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.2;
+						self.generous <- self.generous+0.1;
+						self.sleepy <- self.sleepy-0.1;
+					}
+					
+				}else if(self.gType="tired"){
+					if(myself.sleepy < 0.7 and myself.happy > 0.5){
+						write myself.gType + " is chatting with another " + self.gType;
+						myself.sleepy <- myself.sleepy+0.4;
+						myself.happy <- myself.happy+0.2;
+						myself.angry <- myself.angry-0.1;
+						myself.generous <- myself.generous+0.1;
+						self.sleepy <- self.sleepy+0.4;
+						self.happy <- self.happy+0.2;
+						self.angry <- self.angry-0.1;
+						self.generous <- self.generous+0.1;
+					}
+					else if(myself.angry > 0.4){
+						write myself.gType + " is angry and unfriends " + self.gType;
+						myself.sleepy <- myself.sleepy+0.5;
+						myself.happy <- myself.happy-0.2;
+						myself.angry <- myself.angry+0.4;
+						myself.generous <- myself.generous-0.1;
+						self.sleepy <- self.sleepy+0.5;
+						self.happy <- self.happy-0.4;
+						self.angry <- self.angry+0.4;
+						self.generous <- self.generous-0.1;
+						myself.friend <- nil;
+					}
+				}
+			
+		}else if(myself.gType="tired"){
+			if(myself.dest.type="party"){
+				if(self.gType="tired"){
+					if(myself.sleepy < 0.5 and myself.happy > 0.15 and myself.angry < 0.2){
+						write myself.gType + " is hanging out with another " + self.gType;
+						myself.sleepy <- myself.sleepy+0.4;
+						myself.happy <- myself.happy+0.1;
+						myself.angry <- myself.angry-0.1;
+						myself.generous <- myself.generous+0.1;
+						self.sleepy <- self.sleepy+0.4;
+						self.happy <- self.happy+0.1;
+						self.angry <- self.angry-0.1;
+						self.generous <- self.generous+0.1;
+					}
+					else if(myself.angry > 0.4){
+						write myself.gType + " is angry and unfriends " + self.gType;
+						myself.sleepy <- myself.sleepy+0.5;
+						myself.happy <- myself.happy-0.4;
+						myself.angry <- myself.angry+0.4;
+						myself.generous <- myself.generous-0.1;
+						self.sleepy <- self.sleepy+0.5;
+						self.happy <- self.happy-0.4;
+						self.angry <- self.angry+0.4;
+						self.generous <- self.generous-0.1;
+						myself.friend <- nil;
+					}
+				}
+			}else{
+				if(myself.sleepy<0.5 and self.sleepy<=1.0){
+					write myself.gType + " is happy with " + self.gType;
+					self.sleepy <- self.sleepy-0.5;
+					self.happy <- self.happy+0.2;
+					self.angry <- self.angry-0.4;
+					myself.sleepy <- myself.sleepy-0.5;
+					myself.happy <- myself.happy+0.2;
+					myself.angry <- myself.angry-0.4;
+				}else{
+					write myself.gType + " is so tired with " + self.gType;
+					self.sleepy <- self.sleepy+0.1;
+					self.happy <- self.happy-0.3;
+					self.angry <- self.angry+0.2;
+					myself.sleepy <- myself.sleepy+0.1;
+					myself.happy <- myself.happy-0.3;
+					myself.angry <- myself.angry+0.2;
+				}
+			}
+			
 			
 		}else if(myself.gType="journalist"){
-			if(self.gType="tired"){
-					if(myself.happy > 0.15 and myself.sleepy < 0.2){
+			if(myself.dest.type!="party"){
+				if(self.gType="tired"){
+					if(myself.happy > 0.15 and myself.sleepy < 0.7){
 						write myself.gType + " takes an interview with " + self.gType;
 						myself.sleepy <- myself.sleepy+0.3;
 						myself.happy <- myself.happy+0.2;
@@ -470,7 +605,7 @@ species Guests skills:[moving, fipa]{
 						self.angry <- self.angry-0.15;
 						self.generous <- self.generous+0.1;
 					}
-					else if(myself.angry > 0.2 and self.sleepy > 0.3){
+					else if(myself.angry > 0.2 or self.sleepy > 0.7){
 						write myself.gType + " is too angry to interview such a sleepy person " + self.gType;
 						myself.sleepy <- myself.sleepy+0.1;
 						myself.happy <- myself.happy-0.2;
@@ -481,7 +616,19 @@ species Guests skills:[moving, fipa]{
 						self.angry <- self.angry+0.2;
 						self.generous <- self.generous-0.1;
 					}
+				}
+			}else{
+				write myself.gType + " is at party, and not really happy with interview with " + self.gType;
+				myself.sleepy <- myself.sleepy+0.1;
+				myself.happy <- myself.happy-0.2;
+				myself.angry <- myself.angry+0.2;
+				myself.generous <- myself.generous-0.1;
+				self.sleepy <- self.sleepy+0.1;
+				self.happy <- self.happy-0.2;
+				self.angry <- self.angry+0.2;
+				self.generous <- self.generous-0.1;
 			}
+			
 			
 		}
 		
@@ -552,15 +699,15 @@ experiment festival type:gui{
         
 		}
 		display chart_display refresh:every(10#cycles) {
-             chart "drunk vs. Chill" type: series size: {1, 0.5} position: {0, 0} {
-                data "Happiness1" value: mean (drunkList collect each.happy) style: line color: #green;
-             	data "Angry1" value: mean (drunkList collect each.angry) style: line color: #red;
-             	data "Sleepy1" value: mean (drunkList collect each.sleepy) style: line color: #purple;
-             	data "Generous1" value: mean (drunkList collect each.generous) style: line color: #orange;
-             	data "Happiness2" value: mean (chillList collect each.happy) style: line color: #yellow;
-             	data "Angry2" value: mean (chillList collect each.angry) style: line color: #gray;
-             	data "Sleepy2" value: mean (chillList collect each.sleepy) style: line color: #black;
-             	data "Generous2" value: mean (chillList collect each.generous) style: line color: #blue;
+             chart "Tired vs. Party" type: series size: {1, 0.5} position: {0, 0} {
+                data "Happiness1" value: mean (tiredList collect each.happy) style: line color: #green;
+             	data "Angry1" value: mean (tiredList collect each.angry) style: line color: #red;
+             	data "Sleepy1" value: mean (tiredList collect each.sleepy) style: line color: #purple;
+             	data "Generous1" value: mean (tiredList collect each.generous) style: line color: #orange;
+             	data "Happiness2" value: mean (partyList collect each.happy) style: line color: #yellow;
+             	data "Angry2" value: mean (partyList collect each.angry) style: line color: #gray;
+             	data "Sleepy2" value: mean (partyList collect each.sleepy) style: line color: #black;
+             	data "Generous2" value: mean (partyList collect each.generous) style: line color: #blue;
              	
         	}
              chart "Guests happiness" type: pie style: exploded size: {1, 0.5} position: {0, 0.5}{
