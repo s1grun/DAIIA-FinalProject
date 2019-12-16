@@ -104,6 +104,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 		
 	}
 	
+	//If the guest is thirsty the desire and belief to go to stage is removed also no friend is removed as belief, and we add a thirsty belief
 	reflex default_action{
 		if(flip(0.001) and thirsty= false){
 			thirsty <- true;
@@ -116,10 +117,11 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 		}
 	} 
 	
+	//These are the rules for the thirsty belief and to enjoy beer and the desire for the rules.
 	rule belief:thirsty_belief new_desire:goToBar strength:5.0;
 	rule belief:enjoy_beer new_desire:goBackStage;
 	
-	
+	//This is the get bar location with perceive
 	perceive target: Stage where (each.type ="bar") in: distance {
     	focus id:"barLocation" var:location;
     	 
@@ -127,7 +129,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     
     
 
-    
+    //Here's the plan to go to the bar and when guest are finished at the bar then the belief of thirsty is removed and a new belief is added to enjoy beer
     plan goToBar intention: goToBar finished_when: has_emotion(joy) {
 	    color <-#darkred;
 	    if (target = nil ) {
@@ -159,6 +161,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	    }
     }
     
+    //Here is the plan to choose a bar, the guest has a list of bar locations and the guest will select the bar with the closest distance
 	plan choose_bar intention: choose_bar instantaneous: true {
         list<point> bar_list <- get_beliefs_with_name("barLocation") collect (point(get_predicate(mental_state (each)).values["location_value"]));
 //		write bar_list;
@@ -172,7 +175,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
         do remove_intention(choose_bar, true); 
     }
     
-    
+    //After the guest has finished the beer at the bar he will have a new plan and belief to go to stage
     plan goBackStage intention:goBackStage{
     	dest<-guestLocation;
     	do goto target:dest;
@@ -187,9 +190,10 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     
     
     
-    
+    //If a guest has the belief to go to stage then the guest will have a new desire to enjoy stage
     rule belief:goToStage new_desire:enjoy_stage strength:3.0;
-
+	
+	//Then the guest have the plan to choose a stage and the guest will choose the stage with the shortest distance
     plan choose_stage intention: choose_stage instantaneous: true{
     	list<Stage> stages <- get_beliefs_with_name("targetLocation") collect (get_predicate(mental_state (each)).values["location_value"]);
 		list<Stage> bar_list <- get_beliefs_with_name("barLocation") collect (get_predicate(mental_state (each)).values["location_value"]);
@@ -204,6 +208,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     	do remove_intention(choose_stage,true);
     }
     
+    //After the guest has chosen a stage he will have a new plan to go to that stage
     plan goto_stage intention:goToStage {
     	do add_subintention(get_current_intention(),choose_stage, true);
         do current_intention_on_hold();
@@ -226,6 +231,8 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     	}
     }
     
+    //When the guest has arrived at the stage his plan is to enjoy the stage/concert
+    //If we have a friend then we will interact with that friend
 	plan enjoy_stage intention:enjoy_stage{
 		do wander;
 		do remove_intention(enjoy_stage,true);
@@ -244,6 +251,8 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	
 	rule belief:no_friend new_desire:make_friends;
 	
+	//If we have the belief of no friend then we will have the desire to make friends
+	//After making a new friend we will remove the belief of no friend.
 	plan make_friends intention:make_friends{
 		if(gType="drunk"){
 			ask Guests at_distance 3{
@@ -393,6 +402,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	
 	plan withFriend intention: interact_with_friend{
 //		write "interact with friends 1111111111111";
+		color<-#gray;
 		do remove_intention(interact_with_friend,true);
 		if(friend!= nil){
 			
@@ -632,6 +642,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 		
 //		do add_belief(goToStage);
 	}
+	color<-#blue;
 	}
 
 }

@@ -9,7 +9,7 @@ model creative
 
 /* Insert your model definition here */
 global {
-//	point agentLocation <- {50, 50};
+	point centerLocation <- {50, 50};
 //    int stage_color<-30;
     list<string> genre <- ["rock", "pop", "folks", "jazz"];
     list<string> guestTypes <- ["chill", "party", "tired", "drunk", "journalist"];
@@ -24,6 +24,8 @@ global {
 		
 		
 //		int addDist <- 0;
+		
+		create Health_center with:(location:centerLocation);
 		
 		point storeLocation1 <- {25, 25};
 		create Guests number: 50;
@@ -57,6 +59,15 @@ global {
 	
 	
 }
+
+
+
+
+
+
+
+
+
 
 species Guests skills:[moving, fipa]{
 //	rgb guestColor <- #green;
@@ -95,6 +106,7 @@ species Guests skills:[moving, fipa]{
 	float angry <- rnd(0.0,0.5);
 	float partyMood <- rnd(0.0,0.5);
 	string count;
+	bool friend_frozen <-false;
 	
 	
 	init{
@@ -130,15 +142,15 @@ species Guests skills:[moving, fipa]{
 
 
 	reflex getInfo when:!(empty(informs)){
-		write "Global Angry value: " + globalAngry;
+		
 		loop msg over: informs{
 			Stage spot<- Stage(agent(msg.sender));
-			write msg.sender;
+//			write msg.sender;
 			if(msg.contents[0]="start"){
 				add spot to:stage_list;
-				if(flip(0.5)){
-					write friend;
-					write spot.type;
+				if(flip(0.5) and movingStatus!=3 and  movingStatus!=4){
+//					write friend;
+//					write spot.type;
 					if(friend != nil and spot.type="concert"){
 						write name + " sending invite to friend " + friend;
 						do start_conversation with: [to :: list(friend), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['invitation',spot] ];
@@ -160,8 +172,10 @@ species Guests skills:[moving, fipa]{
 							dest<- stage_list[rnd(length(stage_list) - 1)];
 						}
 						
+						if( movingStatus!=3 and  movingStatus!=4){
+							movingStatus <-1;
+						}
 						
-						movingStatus <-1;
 						remove self from: dest.guestsList;
 					}
 				}
@@ -170,7 +184,7 @@ species Guests skills:[moving, fipa]{
 				add spot to:stage_list;							
 				dest<- spot;
 				movingStatus <-1;
-				write name +" going to concert with friend " + friend;
+				write name +" going to concert with friend " + msg.sender;
 			}
 		}
 			
@@ -178,18 +192,19 @@ species Guests skills:[moving, fipa]{
 	
 	reflex goToStage when:movingStatus=1{
 		do goto target:dest;
-		if(friend != nil){
-			ask friend {
-				write name + "is no longer friend with " + friend;
-				myself.friend <- nil;
-				self.friend <- nil;
-			}
-		}
+		
 	}
 	
 	reflex nearStage when: dest!=nil and distance_to(self,dest)<=7 and movingStatus=1{
 		movingStatus <- 2;
-		dest.guestsList <+ self;		
+		dest.guestsList <+ self;	
+		if(friend != nil){
+			ask friend {
+//				write name + "is no longer friend with " + friend;
+				myself.friend <- nil;
+				self.friend <- nil;
+			}
+		}	
 	}
 	
 	
@@ -296,7 +311,46 @@ species Guests skills:[moving, fipa]{
 
 	}
 	
-	reflex withFriend when: movingStatus=2 and friend!=nil{
+	reflex outRage when: angry>1.5 and movingStatus=2{
+		if friend != nil{
+			if(friend.generous>0.5 and friend.gType!="gournalist"){
+				ask friend{
+//					self.friend_frozen<- true;
+//					myself.friend_frozen <- true;
+					movingStatus<-3;
+					myself.movingStatus<-3;
+					color <- #red;
+					write name + " go to Health_center with grumpy guy:"+ myself.name;
+					color <- #blue;
+				}
+				
+			}
+		}
+	}
+	
+	reflex gotoHealthCenter when: movingStatus=3{
+		Health_center hc<-one_of(Health_center);
+		do goto target:hc;
+		
+		if( distance_to(location, hc.location) <5){
+			movingStatus<-4;
+		}
+	}
+	
+	reflex atHealthCenter when: movingStatus=4{
+		if(friend!=nil){
+			ask friend{
+				self.angry <-self.angry-0.1;
+				self.sleepy <- self.sleepy+0.2;
+				myself.angry <-0.0;
+				myself.sleepy <-myself.sleepy+0.2;
+				movingStatus<-1;
+			}
+		}
+		movingStatus<-1;
+	}
+	
+	reflex withFriend when: movingStatus=2 and friend!=nil {
 		
 		if(gType="drunk"){
 			if(friend.gType="party" or friend.gType="chill"){
@@ -518,6 +572,7 @@ species Guests skills:[moving, fipa]{
 			
 		}
 //		globalAngry <- globalAngry+self.angry+friend.angry;
+		friend<-nil;
 	}
 	
 	
@@ -527,6 +582,13 @@ species Guests skills:[moving, fipa]{
 
 
 
+}
+
+species Health_center{
+	aspect default{
+		draw rectangle(4, 4) color:#red;
+	}
+	
 }
 
 
@@ -571,10 +633,10 @@ species Stage skills:[fipa]{
 				
 			}
 			if(globalAngry >= 1.0){
-					color<-#darkred;
+					color<-#black;
 					write "The angry level is too high, concert ends now" + globalAngry;
 					do start_conversation with: [to ::list(Guests), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['end'] ];
-					write name + 'end '+ type;
+					write name + ' end '+ type;
 					whenToStart <- int(time+10*rnd(1,5));
 					ongoing <- false; 
 					color<-#blue;
@@ -602,6 +664,7 @@ experiment creative type:gui{
 //			species Bar;
 
 			species Stage;
+			species Health_center;
 			
 			//graphics "env" {
         	//	draw cube(environment_size) color: #black empty: true;
