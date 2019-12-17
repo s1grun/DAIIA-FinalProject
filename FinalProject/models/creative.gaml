@@ -311,6 +311,8 @@ species Guests skills:[moving, fipa]{
 		
 			if(length(Guests at_distance 3)>5 or sleepy>0.7){
 				write "tired guy leave the "+dest.type;
+				dest<- stage_list[rnd(length(stage_list) - 1)];
+				movingStatus <-1;
 			}else{
 				ask Guests at_distance 3{
 					if(self.gType!="tired"){
