@@ -10,7 +10,6 @@ model creative
 /* Insert your model definition here */
 global {
 	point centerLocation <- {50, 50};
-//    int stage_color<-30;
     list<string> genre <- ["rock", "pop", "folks", "jazz"];
     list<string> guestTypes <- ["chill", "party", "tired", "drunk", "journalist"];
     list<Guests> tiredList <-[];
@@ -21,18 +20,11 @@ global {
     
     
 	init {
-		
-		
-//		int addDist <- 0;
-		
+		//We have a health center for guests that become too angry
 		create Health_center with:(location:centerLocation);
 		
 		point storeLocation1 <- {25, 25};
 		create Guests number: 50;
-//		{
-//			//location <- {50 + addDist, 50 + addDist};
-//			//addDist <- addDist + 5;
-//		}
 
 		loop gu over:Guests{
 			if(gu.gType="tired"){
@@ -70,28 +62,11 @@ global {
 
 
 species Guests skills:[moving, fipa]{
-//	rgb guestColor <- #green;
-	bool thirsty <- flip(0.5); //50% chance to be thirsty true;
-	bool hungry <- flip(0.5);	//50% chance to be hungry true;
-	//or use int statusFeeling
+
 	int statusFeeling <- 0;    // var0 equals 0, 1 or 2; 0->nothing,1->thirsty,2->hungry
-	
 	point storeDestination <- nil; // To store the location of a store
 	point returnBack <- rnd({0.0, 0.0, 0.0},{100.0,100.0,0.0});
-	point original_location;
-	
-//	float betterLightShow <- rnd(0.1, 1.0);
-//	float betterVisuals <- rnd(0.2, 1.0);
-//	float goodSoundSystem <- rnd(0.3, 1.0);
-//	float famous <- rnd (0.0, 1.0);
-	float popMusic <- rnd(0.0, 1.0);
-	float rockMusic <- rnd(0.0, 1.0);
-	float folksMusic <- rnd(0.0, 1.0);
-	float jazzMusic <- rnd(0.0, 1.0);
-//	Stage fav_stage;
 	point guestLocation <- nil;
-	float util<-0.0;
-	list act_util_list <- [];
 	int status <- 0;
 	rgb my_color <- #blue;
 	string gType <- guestTypes[rnd(length(guestTypes) - 1)];
@@ -157,24 +132,14 @@ species Guests skills:[moving, fipa]{
 		}
 	}
 
-	//point statusPoint <- nil;
-	
-//	reflex statusIdle when: statusPoint = nil 
-//	{
-//		do wander;
-//	}
-
 
 	reflex getInfo when:!(empty(informs)){
 		
 		loop msg over: informs{
 			Stage spot<- Stage(agent(msg.sender));
-//			write msg.sender;
 			if(msg.contents[0]="start"){
 				add spot to:stage_list;
 				if(flip(0.5) and movingStatus!=3 and  movingStatus!=4){
-//					write friend;
-//					write spot.type;
 					if(friend != nil and spot.type="concert"){
 						write name + " sending invite to friend " + friend;
 						do start_conversation with: [to :: list(friend), protocol :: 'fipa-contract-net', performative :: 'inform', contents :: ['invitation',spot] ];
@@ -341,9 +306,11 @@ species Guests skills:[moving, fipa]{
 
 	}
 	
+	//If a guest is angry and his friend is generous and not a journalist,
+	//then his friend will take him to the health center
 	reflex outRage when: angry>1.5 and movingStatus=2{
 		if friend != nil{
-			if(friend.generous>0.5 and friend.gType!="gournalist"){
+			if(friend.generous>0.5 and friend.gType!="journalist"){
 				ask friend{
 //					self.friend_frozen<- true;
 //					myself.friend_frozen <- true;
@@ -360,6 +327,7 @@ species Guests skills:[moving, fipa]{
 		}
 	}
 	
+	//To go to the health center
 	reflex gotoHealthCenter when: movingStatus=3{
 		Health_center hc<-one_of(Health_center);
 		do goto target:hc;
@@ -369,6 +337,7 @@ species Guests skills:[moving, fipa]{
 		}
 	}
 	
+	//When they are at the health center both of their angry level will decrese and they will come a bit sleepy
 	reflex atHealthCenter when: movingStatus=4{
 		if(friend!=nil){
 			ask friend{
@@ -734,6 +703,8 @@ species Stage skills:[fipa]{
 		
 	}
 	
+	//Here we calculate the global angry level for each stage, and if
+	//it goes over 10 then the stage  will end an event.
 	reflex calculateGlobalAngryLevel {
 		globalAngry<-0.0;
 		if(type="concert" or type="party" or type="bar"){
@@ -773,14 +744,9 @@ experiment creative type:gui{
 	output{
 		display map type: opengl {
 			species Guests;
-//			species Bar;
-
 			species Stage;
 			species Health_center;
 			
-			//graphics "env" {
-        	//	draw cube(environment_size) color: #black empty: true;
-        	//}
         
 		}
 		display chart_display refresh:every(10#cycles) {
@@ -789,19 +755,8 @@ experiment creative type:gui{
              	data "bar2" value: Stage[1].globalAngry style: line color: #red;
              	data "party" value: Stage[2].globalAngry style: line color: #purple;
              	data "concert" value: Stage[3].globalAngry style: line color: #orange;
-//             	data "Happiness2" value: mean (chillList collect each.happy) style: line color: #yellow;
-//             	data "Angry2" value: mean (chillList collect each.angry) style: line color: #gray;
-//             	data "Sleepy2" value: mean (chillList collect each.sleepy) style: line color: #black;
-//             	data "Generous2" value: mean (chillList collect each.generous) style: line color: #blue;
              	
         	}
-//             chart "Guests happiness" type: pie style: exploded size: {1, 0.5} position: {0, 0.5}{
-//           		data "Party guests happiness" value: partyList collect (each.angry) color: #magenta ;
-//           		data "Tired guests happiness" value: tiredList collect (each.angry) color: #blue ;
-//           		data "Chilled guests happiness" value: chillList collect (each.angry) color: #green ;
-//           		data "Drunk guests happiness" value: drunkList collect (each.angry) color: #orange ;
-//           		data "Journalist guests happiness" value: journalistList collect (each.angry) color: #red ;	
-//         	 }
          
  	
      }
