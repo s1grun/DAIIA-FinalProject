@@ -18,7 +18,7 @@ global {
 		
 
 		
-		point storeLocation1 <- {25, 25};
+		
 		create Guests number: 20;
 
 		create Stage number: 3 with:(stage_color:#blue,type:"bar");
@@ -118,7 +118,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 	} 
 	
 	//These are the rules for the thirsty belief and to enjoy beer and the desire for the rules.
-	rule belief:thirsty_belief new_desire:goToBar strength:5.0;
+	rule belief:thirsty_belief new_desire:goToBar;
 	rule belief:enjoy_beer new_desire:goBackStage;
 	
 	//This is the get bar location with perceive
@@ -179,11 +179,12 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     plan goBackStage intention:goBackStage{
     	dest<-guestLocation;
     	do goto target:dest;
-    		if(location distance_to dest<5){
-    			write name+ " go to "+dest;
+    	do remove_intention(goBackStage, true); 
+    		if(location distance_to dest<3){
+    			write name+ " go back to "+dest;
 //    			dest <- nil;
+				do remove_belief(enjoy_beer);
     			do add_belief(goToStage);
-    			do remove_belief(enjoy_beer);
     			do remove_intention(goBackStage,true);
     		}
     }
@@ -191,15 +192,16 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     
     
     //If a guest has the belief to go to stage then the guest will have a new desire to enjoy stage
-    rule belief:goToStage new_desire:enjoy_stage strength:3.0;
+    
+    rule belief:goToStage new_desire:enjoy_stage;
 	
 	//Then the guest have the plan to choose a stage and the guest will choose the stage with the shortest distance
-    plan choose_stage intention: choose_stage instantaneous: true{
+    plan choose_stage intention: choose_stage{
     	list<Stage> stages <- get_beliefs_with_name("targetLocation") collect (get_predicate(mental_state (each)).values["location_value"]);
 		list<Stage> bar_list <- get_beliefs_with_name("barLocation") collect (get_predicate(mental_state (each)).values["location_value"]);
 //		
 //    	write name + "  "+ stages;
-		if(sleepy>=0.5 or length(stages)=0){
+		if( length(stages)=0){
 			dest<- bar_list with_min_of (each distance_to self);
 		}else{
 			dest<- stages[rnd(length(stages)-1)]; 
@@ -210,11 +212,11 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     
     //After the guest has chosen a stage he will have a new plan to go to that stage
     plan goto_stage intention:goToStage {
-    	do add_subintention(get_current_intention(),choose_stage, true);
-        do current_intention_on_hold();
+//    	do add_subintention(get_current_intention(),choose_stage, true);
+//      do current_intention_on_hold();
     	if(dest!=nil){
     		do goto target:dest;
-    		if(location distance_to dest<5){
+    		if(location distance_to dest<3){
     			write name+ " go to "+dest;
     			
     			if(friend!=nil){
@@ -235,6 +237,8 @@ species Guests skills:[moving, fipa] control:simple_bdi{
     //If we have a friend then we will interact with that friend
 	plan enjoy_stage intention:enjoy_stage{
 		do wander;
+//		do remove_belief(goToStage);
+//		write "11111111111111111";
 		do remove_intention(enjoy_stage,true);
 		if(friend=nil){
 			do add_belief(no_friend);
@@ -319,6 +323,10 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 		
 			if(length(Guests at_distance 3)>5 or sleepy>0.7){
 				write "tired guy leave the "+ dest.type;
+				do add_desire(choose_stage);
+				do remove_belief(goToStage);
+				do remove_belief(enjoy_stage);
+				do add_desire(goToStage);
 			}else{
 				ask Guests at_distance 3{
 					if(self.gType!="tired"){
@@ -358,14 +366,26 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 					do add_belief(new_predicate("barLocation",["location_value"::spot]));
 				}
 				add spot to:stage_list;
-				if(flip(0.3) and thirsty = false){
+				if(thirsty = false){
+					if(flip(0.5) ){
 //					write name+' go to '+ spot;
-//					dest<- spot;
-//					movingStatus <-1;
-//					dest <- nil;
-					do remove_belief(goToStage);
-					do add_desire(goToStage);
+						dest<- spot;
+	//					movingStatus <-1;
+	//					dest <- nil;
+						do add_intention(choose_stage);
+						do remove_belief(goToStage);
+						do remove_belief(enjoy_stage);
+						do add_desire(goToStage);
+					}else {
+						if(dest=nil){
+							do add_desire(choose_stage);
+							do remove_belief(goToStage);
+							do remove_belief(enjoy_stage);
+							do add_desire(goToStage);
+						}
+					}
 				}
+				
 
 			}else if(msg.contents[0]="end"){
 //				do add_belief(new_predicate("remove_location",["location_value"::spot]));
@@ -642,6 +662,7 @@ species Guests skills:[moving, fipa] control:simple_bdi{
 		
 //		do add_belief(goToStage);
 	}
+	friend <- nil;
 	color<-#blue;
 	}
 
